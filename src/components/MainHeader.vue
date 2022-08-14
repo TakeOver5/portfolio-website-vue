@@ -26,7 +26,7 @@ export default {
 </script>
 
 <style lang="scss">
-  .el-header {
+.el-header {
   width: 100%;
   max-width: 1320px;
   padding: 0;

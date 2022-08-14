@@ -18,7 +18,12 @@
       </div>
       <!-- header 背景結束 -->
       <el-main>
-        <router-view/>
+        <!-- router-view/ -->
+        <div class="wrap">
+            <el-row :gutter="16">
+              <el-col :span="24">Hello</el-col>
+            </el-row>
+        </div>
       </el-main>
     </el-container>
   </div>
@@ -42,11 +47,12 @@ body {
   padding: 0;
   margin: 0;
   list-style: none;
-  font-family: 'Noto Sans TC', sans-serif;
+  background-repeat: repeat;
+  background-image: url("@/assets/image/sushi.png");
 }
 
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Noto Sans TC', sans-serif, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -60,7 +66,7 @@ body {
 
 .main-img-wrap {
   max-width: 1920px;
-  height: 680px;
+  height: 665px;
   .el-image {
     width: 100%;
     position: absolute;
@@ -77,7 +83,7 @@ body {
     height: auto;
     h2 {
       font-size: 50px;
-      font-weight: 700;
+      font-weight: 500;
       line-height: 1.2;
       color: #fff;
       display: block;
@@ -85,12 +91,31 @@ body {
     }
     p {
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 300;
       line-height: 1.6;
       color: rgba(255, 255, 255, 0.5);
       display: block;
       padding: 0 8px;
     }
+  }
+}
+
+.el-main {
+  background-color: Beige;
+  --el-main-padding: 0;
+  margin: 40px auto;
+  width: 98%;
+  max-width: 1486px;
+  border-radius: 8px;
+  overflow-x:hidden;
+  height: 600px;
+  .wrap {
+    margin: 40px;
+    background-color: red;
+    height: 300px;
+    width: 80.75%;
+    max-width: 1200px;
+    margin: 40px auto;
   }
 }
 
