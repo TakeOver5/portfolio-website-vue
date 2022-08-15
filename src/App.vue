@@ -20,19 +20,11 @@
       <el-main>
         <!-- router-view/ -->
         <div class="main-content-wrap">
-          <el-row :gutter="16" class="title">
-            <el-col>
-              <el-button round size="large">ALL</el-button>
-              <el-button round size="large">Python</el-button>
-              <el-button round size="large">Java</el-button>
-              <el-button round size="large">C#</el-button>
-            </el-col>
-          </el-row>
           <el-row :gutter="16">
-            <el-col :span="8" v-for="item in 12" :key="item">
+            <el-col :span="8" :lg="8" :sm="12" :xs="24" v-for="item in 12" :key="item">
               <el-card :body-style="{ padding: '0px' }">
                 <img
-                  src="https://picsum.photos/388/356?random={{item}}"
+                  src="https://picsum.photos/400/380?random={{item}}"
                   class="image"
                   alt="漢堡"
                 />
@@ -45,7 +37,7 @@
               </el-card>
             </el-col>
           </el-row>
-          <el-row>
+          <el-row class="pagination">
             <el-pagination background layout="prev, pager, next" :total="300" />
           </el-row>
           <el-row class="footer">
@@ -132,7 +124,7 @@ body {
 
 .el-main {
   position: relative;
-  background-color: Beige;
+  background-color: rgba(245, 245, 220, .6);
   --el-main-padding: 0;
   margin: 324px auto 24px;
   width: 98%;
@@ -142,7 +134,8 @@ body {
   height: auto;
   .main-content-wrap {
     margin: 40px;
-    background-color: red;
+    /* 內文背景 */
+    background-color: transparent;
     height: auto;
     width: 80.75%;
     max-width: 1200px;
@@ -150,40 +143,19 @@ body {
     .title {
       margin-bottom: 8px;
     }
-    .el-button {
-      color: #191919;
-      border-color: transparent;
-      background-color: transparent;
-      cursor:pointer;
-      font-weight: 600;
-      font-size: 24px;
-      border: 3px solid #191919;
-    }
-    .el-button:hover,
-    .el-button.is-active,
-    .el-button:active {
-      background: rgba($color: #f2f2f2, $alpha: .3);
-      border: none;
-      border: 3px solid transparent;
-    }
-    .el-button:focus {
-      color: #f2f2f2;
-      background-color: #191919;
-      border: 3px solid transparent;
-    }
   }
 }
 
 .el-row {
   .el-col {
     .el-card {
+      cursor: pointer;
       height: auto;
       margin-top: 16px;
       position: relative;
       --el-card-bg-color: transparent;
       font-size: 0;
       border: none;
-      border-radius: 15;
       .el-image {
         vertical-align: middle;
       }
@@ -232,7 +204,7 @@ body {
 
 .footer {
   margin-top: 32px;
-  background-color: aqua;
+  background-color: transparent;
   height: 30px;
   width: 100%;
   background-image: linear-gradient(to right, #ccc 0%, #ccc 50%, transparent 50%);
@@ -250,8 +222,13 @@ body {
   }
 }
 
-.el-pagination {
-  text-align: center;
+.pagination {
+  padding: 0 auto;
+  .el-pagination {
+    justify-content: center;
+    width: 100%;
+    padding-top: 36px;
+  }
 }
 
 @media (max-width: 575.99px) {  }
