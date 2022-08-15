@@ -2,7 +2,24 @@
   <div class="common-layout">
     <el-container>
       <el-header>
-        <MainHeader/>
+        <div class="wrap">
+          <el-row :gutter="16">
+            <el-col :span="24">
+              <el-menu
+                class="el-menu-demo"
+                mode="horizontal"
+                :ellipsis="false"
+                @select="handleSelect"
+                :default-active="0"
+              >
+                <el-menu-item index="0"></el-menu-item>
+                <div class="flex-grow"></div>
+                <el-menu-item index="1" @click="loginDialog = true">登入</el-menu-item>
+                <el-menu-item index="2">註冊</el-menu-item>
+              </el-menu>
+            </el-col>
+          </el-row>
+        </div>
       </el-header>
       <!-- header 背景 -->
       <div class="main-img-wrap">
@@ -49,14 +66,37 @@
       </el-main>
     </el-container>
   </div>
+  <!-- 登入 -->
+  <div class="loginDialogSection">
+    <el-dialog v-model="loginDialog" title="登入" center>
+      <el-form
+        label-position="top"
+        label-width="100px"
+        :model="loginForm"
+        style="max-width: 460px"
+      >
+        <el-form-item label="帳號">
+          <el-input v-model="loginForm.account" />
+        </el-form-item>
+        <el-form-item label="密碼">
+          <el-input v-model="loginForm.password" />
+        </el-form-item>
+        <el-button type="primary" @click="submitForm(ruleFormRef)">Create</el-button>
+      </el-form>
+    </el-dialog>
+  </div>
 </template>
 
 <script>
-import MainHeader from '@/components/MainHeader.vue';
 
 export default {
   components: {
-    MainHeader,
+  },
+  data() {
+    return {
+      loginDialog: false,
+      loginForm: {},
+    };
   },
 };
 </script>
@@ -64,6 +104,46 @@ export default {
 <style lang="scss">
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100;300;400;500;700;900&display=swap');
+
+.el-menu {
+  border: none;
+  background-color: transparent;
+  .el-menu-item,
+  .el-menu-item:link,
+  .el-menu--horizontal .el-menu-item:not(.is-disabled):link,
+  .el-menu--horizontal .el-menu-item:not(.is-disabled):active,
+  .el-menu--horizontal .el-menu-item:not(.is-disabled):focus,
+  .el-menu--horizontal .el-menu-item:not(.is-disabled):visited,
+  .el-menu-item:hover, .el-menu-item:active, .el-menu-item:focus, .el-menu-itme:visited {
+    color: yellow !important;
+    background-color: transparent !important;
+    border: none;
+  }
+
+  .el-menu--horizontal .el-menu-item:not(.is-disabled):hover,
+  .el-menu-item:hover, .el-menu-item.is-active:hover {
+    background-color: rgba($color: #e1e1e1, $alpha: .5) !important;
+  }
+
+  .el-menu-item.is-active,
+  .el-menu-item.is-active:link,
+  .el-menu-item.is-active:active,
+  .el-menu-item.is-active:focus,
+  .el-menu-item:visited
+  {
+    color: yellow !important;
+    background-color: transparent !important;
+    border: none;
+  }
+}
+
+.el-header {
+  width: 100%;
+  max-width: 1320px;
+  padding: 0;
+  margin: 0 auto;
+  position: relative;
+}
 
 body {
   padding: 0;
@@ -228,6 +308,12 @@ body {
     justify-content: center;
     width: 100%;
     padding-top: 36px;
+  }
+}
+
+.loginDialogSection {
+  .el-dialog {
+    width: 440px;
   }
 }
 
