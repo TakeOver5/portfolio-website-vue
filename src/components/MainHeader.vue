@@ -10,7 +10,7 @@
           :default-active="0"
         >
           <el-menu-item index="0"></el-menu-item>
-          <div class="flex-grow" />
+          <div class="flex-grow"></div>
           <el-menu-item index="1">登入</el-menu-item>
           <el-menu-item index="2">註冊</el-menu-item>
         </el-menu>

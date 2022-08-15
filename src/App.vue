@@ -19,10 +19,40 @@
       <!-- header 背景結束 -->
       <el-main>
         <!-- router-view/ -->
-        <div class="wrap">
-            <el-row :gutter="16">
-              <el-col :span="24">Hello</el-col>
-            </el-row>
+        <div class="main-content-wrap">
+          <el-row :gutter="16" class="title">
+            <el-col>
+              <el-button round size="large">ALL</el-button>
+              <el-button round size="large">Python</el-button>
+              <el-button round size="large">Java</el-button>
+              <el-button round size="large">C#</el-button>
+            </el-col>
+          </el-row>
+          <el-row :gutter="16">
+            <el-col :span="8" v-for="item in 12" :key="item">
+              <el-card :body-style="{ padding: '0px' }">
+                <img
+                  src="https://picsum.photos/388/356?random={{item}}"
+                  class="image"
+                  alt="漢堡"
+                />
+                <div class="txt">
+                  <h2>你一定愛讀的極簡國學：國學包括經史子集蒙，從112本浩瀚經典中， 薈萃出生活與生存的智慧。</h2>
+                  <p>我們為什麼要讀國學？因為這是文學素養的入門，讓你精準用字、懂語感、通世事。但國學普遍深奧難懂且資料龐大，
+                    包括先秦經典及諸子、兩漢經學、魏晉玄學、宋明理學和同時期的漢賦、六朝駢文、唐宋詩詞、元曲，到明清小說與歷代史學，
+                    沒有人有時間都看過，更難以理解其內容</p>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-pagination background layout="prev, pager, next" :total="300" />
+          </el-row>
+          <el-row class="footer">
+            <div class="copyright">
+              <p>版權宣告</p>
+            </div>
+          </el-row>
         </div>
       </el-main>
     </el-container>
@@ -66,7 +96,7 @@ body {
 
 .main-img-wrap {
   max-width: 1920px;
-  height: 665px;
+  height: auto;
   .el-image {
     width: 100%;
     position: absolute;
@@ -101,22 +131,127 @@ body {
 }
 
 .el-main {
+  position: relative;
   background-color: Beige;
   --el-main-padding: 0;
-  margin: 40px auto;
+  margin: 324px auto 24px;
   width: 98%;
   max-width: 1486px;
   border-radius: 8px;
   overflow-x:hidden;
-  height: 600px;
-  .wrap {
+  height: auto;
+  .main-content-wrap {
     margin: 40px;
     background-color: red;
-    height: 300px;
+    height: auto;
     width: 80.75%;
     max-width: 1200px;
     margin: 40px auto;
+    .title {
+      margin-bottom: 8px;
+    }
+    .el-button {
+      color: #191919;
+      border-color: transparent;
+      background-color: transparent;
+      cursor:pointer;
+      font-weight: 600;
+      font-size: 24px;
+      border: 3px solid #191919;
+    }
+    .el-button:hover,
+    .el-button.is-active,
+    .el-button:active {
+      background: rgba($color: #f2f2f2, $alpha: .3);
+      border: none;
+      border: 3px solid transparent;
+    }
+    .el-button:focus {
+      color: #f2f2f2;
+      background-color: #191919;
+      border: 3px solid transparent;
+    }
   }
+}
+
+.el-row {
+  .el-col {
+    .el-card {
+      height: auto;
+      margin-top: 16px;
+      position: relative;
+      --el-card-bg-color: transparent;
+      font-size: 0;
+      border: none;
+      border-radius: 15;
+      .el-image {
+        vertical-align: middle;
+      }
+      .txt {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: 40px;
+        background-color: rgba(0, 0, 0, .6);
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity .5s;
+        h2 {
+          font-size: 24px;
+          color: #ff0;
+          font-weight: 500;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+        }
+        p {
+          font-size: 18px;
+          color: #fff;
+          font-weight: 100;
+          text-align: left;
+          line-height: 1.6;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 3;
+        }
+      }
+    }
+    .el-card:hover .txt {
+      opacity: 1;
+    }
+  }
+}
+
+.footer {
+  margin-top: 32px;
+  background-color: aqua;
+  height: 30px;
+  width: 100%;
+  background-image: linear-gradient(to right, #ccc 0%, #ccc 50%, transparent 50%);
+  background-size: 10px 2px;
+  background-repeat: repeat-x;
+  .copyright {
+    width: 100%;
+    margin: auto;
+    p {
+      margin-top: 24px;
+      display: block;
+      color: #333;
+      font-size: 14px;
+    }
+  }
+}
+
+.el-pagination {
+  text-align: center;
 }
 
 @media (max-width: 575.99px) {  }
