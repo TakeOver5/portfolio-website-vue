@@ -18,7 +18,34 @@
       </div>
       <!-- header 背景結束 -->
       <el-main>
-        <router-view/>
+        <!-- router-view/ -->
+        <div class="main-content-wrap">
+          <el-row :gutter="16">
+            <el-col :span="8" :lg="8" :sm="12" :xs="24" v-for="item in 12" :key="item">
+              <el-card :body-style="{ padding: '0px' }">
+                <img
+                  src="https://picsum.photos/400/380?random={{item}}"
+                  class="image"
+                  alt="漢堡"
+                />
+                <div class="txt">
+                  <h2>你一定愛讀的極簡國學：國學包括經史子集蒙，從112本浩瀚經典中， 薈萃出生活與生存的智慧。</h2>
+                  <p>我們為什麼要讀國學？因為這是文學素養的入門，讓你精準用字、懂語感、通世事。但國學普遍深奧難懂且資料龐大，
+                    包括先秦經典及諸子、兩漢經學、魏晉玄學、宋明理學和同時期的漢賦、六朝駢文、唐宋詩詞、元曲，到明清小說與歷代史學，
+                    沒有人有時間都看過，更難以理解其內容</p>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+          <el-row class="pagination">
+            <el-pagination background layout="prev, pager, next" :total="300" />
+          </el-row>
+          <el-row class="footer">
+            <div class="copyright">
+              <p>版權宣告</p>
+            </div>
+          </el-row>
+        </div>
       </el-main>
     </el-container>
   </div>
@@ -42,11 +69,12 @@ body {
   padding: 0;
   margin: 0;
   list-style: none;
-  font-family: 'Noto Sans TC', sans-serif;
+  background-repeat: repeat;
+  background-image: url("@/assets/image/sushi.png");
 }
 
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Noto Sans TC', sans-serif, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -60,7 +88,7 @@ body {
 
 .main-img-wrap {
   max-width: 1920px;
-  height: 680px;
+  height: auto;
   .el-image {
     width: 100%;
     position: absolute;
@@ -77,7 +105,7 @@ body {
     height: auto;
     h2 {
       font-size: 50px;
-      font-weight: 700;
+      font-weight: 500;
       line-height: 1.2;
       color: #fff;
       display: block;
@@ -85,12 +113,121 @@ body {
     }
     p {
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 300;
       line-height: 1.6;
       color: rgba(255, 255, 255, 0.5);
       display: block;
       padding: 0 8px;
     }
+  }
+}
+
+.el-main {
+  position: relative;
+  background-color: rgba(245, 245, 220, .6);
+  --el-main-padding: 0;
+  margin: 324px auto 24px;
+  width: 98%;
+  max-width: 1486px;
+  border-radius: 8px;
+  overflow-x:hidden;
+  height: auto;
+  .main-content-wrap {
+    margin: 40px;
+    /* 內文背景 */
+    background-color: transparent;
+    height: auto;
+    width: 80.75%;
+    max-width: 1200px;
+    margin: 40px auto;
+    .title {
+      margin-bottom: 8px;
+    }
+  }
+}
+
+.el-row {
+  .el-col {
+    .el-card {
+      cursor: pointer;
+      height: auto;
+      margin-top: 16px;
+      position: relative;
+      --el-card-bg-color: transparent;
+      font-size: 0;
+      border: none;
+      .el-image {
+        vertical-align: middle;
+      }
+      .txt {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: 40px;
+        background-color: rgba(0, 0, 0, .6);
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity .5s;
+        h2 {
+          font-size: 24px;
+          color: #ff0;
+          font-weight: 500;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+        }
+        p {
+          font-size: 18px;
+          color: #fff;
+          font-weight: 100;
+          text-align: left;
+          line-height: 1.6;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 3;
+        }
+      }
+    }
+    .el-card:hover .txt {
+      opacity: 1;
+    }
+  }
+}
+
+.footer {
+  margin-top: 32px;
+  background-color: transparent;
+  height: 30px;
+  width: 100%;
+  background-image: linear-gradient(to right, #ccc 0%, #ccc 50%, transparent 50%);
+  background-size: 10px 2px;
+  background-repeat: repeat-x;
+  .copyright {
+    width: 100%;
+    margin: auto;
+    p {
+      margin-top: 24px;
+      display: block;
+      color: #333;
+      font-size: 14px;
+    }
+  }
+}
+
+.pagination {
+  padding: 0 auto;
+  .el-pagination {
+    justify-content: center;
+    width: 100%;
+    padding-top: 36px;
   }
 }
 
