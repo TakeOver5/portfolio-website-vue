@@ -9,8 +9,8 @@ const Result = {
 
 const MemberData = [
   {
-    id: '1',
-    avrtar: 'https://i.pravatar.cc/300',
+    id: 1,
+    avatar: 'https://i.pravatar.cc/300',
     name: '台灣阿成',
     email: 'demo1@gmail.com',
     state_code: 0,
@@ -18,8 +18,8 @@ const MemberData = [
     password: 'a12345678',
   },
   {
-    id: '2',
-    avrtar: 'https://i.pravatar.cc/300',
+    id: 2,
+    avatar: 'https://i.pravatar.cc/300',
     name: 'KoreanFish',
     email: 'demo2@gmail.com',
     state_code: 1,
@@ -27,8 +27,8 @@ const MemberData = [
     password: 'a87654321',
   },
   {
-    id: '3',
-    avrtar: 'https://i.pravatar.cc/300',
+    id: 3,
+    avatar: 'https://i.pravatar.cc/300',
     name: '蔡EE',
     email: 'demo3@gmail.com',
     state_code: 0,
@@ -36,8 +36,8 @@ const MemberData = [
     password: 'a22334455',
   },
   {
-    id: '4',
-    avrtar: 'https://i.pravatar.cc/300',
+    id: 4,
+    avatar: 'https://i.pravatar.cc/300',
     name: '管理員一號',
     email: 'demo4@gmail.com',
     state_code: 0,
@@ -45,8 +45,8 @@ const MemberData = [
     password: 'm12345678',
   },
   {
-    id: '5',
-    avrtar: 'https://i.pravatar.cc/300',
+    id: 5,
+    avatar: 'https://i.pravatar.cc/300',
     name: '管理員二號',
     email: 'demo5@gmail.com',
     state_code: 0,
@@ -67,3 +67,5 @@ mock('/login', 'post', () => {
   Result.data = MemberData;
   return Result;
 });
+
+mock('/register', 'post', () => Result);

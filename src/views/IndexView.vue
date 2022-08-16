@@ -14,8 +14,17 @@
               >
                 <el-menu-item index="0"></el-menu-item>
                 <div class="flex-grow"></div>
-                <el-menu-item index="1" @click="loginDialog = true">登入</el-menu-item>
-                <el-menu-item index="2">註冊</el-menu-item>
+                <el-menu-item index="1" @click="loginDialog = true" v-if="!user.id">
+                  登入
+                </el-menu-item>
+                <el-menu-item index="2" v-if="!user.id" @click="registerDialog = true">
+                  註冊
+                </el-menu-item>
+                <el-menu-item index="3" v-if="user.id">
+                  <el-avatar  size="default" :src="user.avatar" style="margin-right:8px;" />
+                  {{user.name}}
+                </el-menu-item>
+                <el-menu-item index="4" v-if="user.id" @click="logout">退出</el-menu-item>
               </el-menu>
             </el-col>
           </el-row>
@@ -38,7 +47,7 @@
         <!-- router-view/ -->
         <div class="main-content-wrap">
           <el-row :gutter="16">
-            <el-col :span="8" :lg="8" :sm="12" :xs="24" v-for="item in 12" :key="item">
+            <el-col :span="8" :lg="8" :sm="12" :xs="24" v-for="item in 7" :key="item">
               <el-card :body-style="{ padding: '0px' }">
                 <img
                   src="https://picsum.photos/400/380?random={{item}}"
@@ -77,7 +86,7 @@
         ref="ruleloginForm"
         :rules="loginRules"
       >
-        <el-form-item label="帳號" prop="account">
+        <el-form-item label="信箱" prop="account">
           <el-input v-model="loginForm.account" />
         </el-form-item>
         <el-form-item label="密碼" prop="password">
@@ -98,6 +107,36 @@
       </el-form>
     </el-dialog>
   </div>
+  <!-- 註冊 -->
+  <div class="registerDialogSection">
+    <el-dialog v-model="registerDialog" title="註冊" center @close="resetForm('ruleRegisterForm')"
+    width="440px">
+      <el-form
+        label-position="top"
+        label-width="100px"
+        :model="registerForm"
+        ref="ruleRegisterForm"
+        :rules="registerRules"
+      >
+        <el-form-item label="電子信箱" prop="email">
+          <el-input v-model="registerForm.email" />
+        </el-form-item>
+        <el-form-item label="密碼" prop="password">
+          <el-input v-model="registerForm.password" type="password" />
+        </el-form-item>
+        <el-form-item label="確認密碼" prop="checkPassword">
+          <el-input v-model="registerForm.checkPassword" type="password" />
+        </el-form-item>
+        <el-form-item>
+          <div style="width:100%; text-align: -webkit-center; margin-top: 16px;">
+            <el-button type="success"
+            @click="register('ruleRegisterForm')"
+            style="width: 70%; display: block;">註冊</el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
 </template>
 
 <script>
@@ -107,9 +146,30 @@ export default {
   components: {
   },
   data() {
+    const validatePass = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('請輸入密碼'));
+      } else {
+        if (this.registerForm.checkPassword !== '') {
+          this.$refs.ruleRegisterForm.validateField('checkPassword');
+        }
+        callback();
+      }
+    };
+    const validatePass2 = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('請再次輸入密碼'));
+      } else if (value !== this.registerForm.password) {
+        callback(new Error('兩次輸入密碼不一致！'));
+      } else {
+        callback();
+      }
+    };
     return {
       loginDialog: false,
+      registerDialog: false,
       loginForm: {},
+      registerForm: {},
       loginRules: {
         account: [
           {
@@ -125,6 +185,31 @@ export default {
           },
         ],
       },
+      registerRules: {
+        email: [
+          {
+            type: 'email', required: true, message: '請輸入電子信箱', trigger: 'blur',
+          },
+        ],
+        password: [
+          {
+            required: true, message: '請輸入密碼', validator: validatePass, trigger: 'blur',
+          },
+          {
+            pattern: /[a-zA-Z]/,
+            message: '密碼需字母開頭',
+          },
+          {
+            min: 8, max: 16, message: '長度在 8 ~ 16 個', trigger: 'change',
+          },
+        ],
+        checkPassword: [
+          {
+            required: true, validator: validatePass2, trigger: 'change',
+          },
+        ],
+      },
+      user: {},
     };
   },
   methods: {
@@ -141,7 +226,7 @@ export default {
                 this.$store.commit('setAuth', res.data.data[i].auth);
                 this.$store.commit('setID', res.data.data[i].id);
                 this.$store.commit('setEMAIL', res.data.data[i].email);
-                console.log(res.data.data[i]);
+                this.user = res.data.data[i];
                 break;
               }
             }
@@ -151,7 +236,6 @@ export default {
                 message: '登入成功',
                 type: 'success',
               });
-
               this.loginDialog = false;
             } else {
               this.loginForm.password = '';
@@ -168,6 +252,41 @@ export default {
     },
     resetForm(formName) {
       this.$refs[formName].resetFields();
+    },
+    logout() {
+      this.$store.commit('setAuth', null);
+      this.$store.commit('setID', null);
+      this.$store.commit('setEMAIL', null);
+      this.user = {};
+      ElMessage({
+        showClose: true,
+        message: '登出成功',
+        type: 'warning',
+      });
+    },
+    register(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          this.$http.post('/register', { ...this.registerForm }).then((res) => {
+            console.log(res);
+            if (res.data.code === 200) {
+              ElMessage({
+                showClose: true,
+                message: '註冊成功，現在你可以使用此信箱登錄',
+                type: 'success',
+              });
+              this.registerDialog = false;
+            } else {
+              ElMessage({
+                showClose: true,
+                message: '抱歉信箱已使用',
+                type: 'error',
+              });
+            }
+          });
+        }
+        return false;
+      });
     },
   },
 };

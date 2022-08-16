@@ -9,6 +9,8 @@ export default createStore({
     EMAIL: '',
   },
   getters: {
+  },
+  mutations: {
     setAuth: (state, auth) => {
       state.AUTH = auth;
     },
@@ -21,8 +23,6 @@ export default createStore({
       state.EMAIL = email;
     },
     getEMAIL: (state) => state.EMAIL,
-  },
-  mutations: {
   },
   actions: {
   },
