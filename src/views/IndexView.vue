@@ -47,25 +47,31 @@
         <!-- router-view/ -->
         <div class="main-content-wrap">
           <el-row :gutter="16">
-            <el-col :span="8" :lg="8" :sm="12" :xs="24" v-for="item in 7" :key="item">
-              <el-card :body-style="{ padding: '0px' }">
+            <el-col :span="8" :lg="8" :sm="12" :xs="24"
+            v-for="item in articleList" :key="item.article_id">
+              <!-- 卡片 -->
+              <el-card :body-style="{ padding: '0px' }" @click="cardDetail">
                 <img
-                  src="https://picsum.photos/400/380?random={{item}}"
+                  :src="item.cover"
                   class="image"
-                  alt="漢堡"
+                  :alt="item.title"
                 />
                 <div class="txt">
-                  <h2>你一定愛讀的極簡國學：國學包括經史子集蒙，從112本浩瀚經典中， 薈萃出生活與生存的智慧。</h2>
-                  <p>我們為什麼要讀國學？因為這是文學素養的入門，讓你精準用字、懂語感、通世事。但國學普遍深奧難懂且資料龐大，
-                    包括先秦經典及諸子、兩漢經學、魏晉玄學、宋明理學和同時期的漢賦、六朝駢文、唐宋詩詞、元曲，到明清小說與歷代史學，
-                    沒有人有時間都看過，更難以理解其內容</p>
+                  <h2>{{ item.title }}</h2>
+                  <p>{{ item.introduction }}</p>
                 </div>
               </el-card>
+              <!-- 卡片結束 -->
             </el-col>
           </el-row>
+          <!-- 分頁 -->
           <el-row class="pagination">
-            <el-pagination background layout="prev, pager, next" :total="300" />
+            <el-pagination background layout="prev, pager, next"
+            :total="7"
+            :page-size="articlePageSize"
+            @current-change="handleCurrentChange" />
           </el-row>
+          <!-- 分頁結束 -->
           <el-row class="footer">
             <div class="copyright">
               <p>版權宣告</p>
@@ -137,6 +143,36 @@
       </el-form>
     </el-dialog>
   </div>
+  <!-- 註冊結束 -->
+  <!-- 卡片對話框 -->
+  <el-dialog v-model="dialogTableVisible"
+  width="80%" max-height="80%">
+    <el-row :gutter="8">
+      <el-col :span="17">
+        <el-row :gutter="8">
+          <el-col>
+            <div>自動避障六足音效機器人</div>
+          </el-col>
+          <el-col>
+            <div>寫程式、玩科技，好玩就能夠學得快，組裝一部仿昆蟲動作行走的六足機器人
+              ，組好立刻就能玩。除了行走外，也加上了超音波測距模組，可以偵測前方的障礙物，
+              讓六足機器人可以自動躲避障礙，暢行無阻。我們還為六足機器人加上了圓圓可愛的喇叭，
+              偵測到障礙物時，會發出驚嚇的尖叫聲，再搭配惹人憐愛的發抖動作，讓六足機器人更加趣味好玩。
+            </div>
+          </el-col>
+        </el-row>
+      </el-col>
+      <el-col :span="7">
+        <div>
+          <el-avatar size="default" src="https://i.pravatar.cc/300" style="margin-right:8px;" />
+        </div>
+        <div>
+          <p>台灣阿成</p>
+        </div>
+      </el-col>
+    </el-row>
+  </el-dialog>
+  <!-- 卡片對話框結束 -->
 </template>
 
 <script>
@@ -210,6 +246,9 @@ export default {
         ],
       },
       user: {},
+      articleList: [],
+      articlePageSize: 3,
+      dialogTableVisible: false,
     };
   },
   methods: {
@@ -288,6 +327,29 @@ export default {
         return false;
       });
     },
+    loadArticleList() {
+      this.$http.get('/article').then((res) => {
+        this.articleList = res.data.data;
+      });
+    },
+    handleCurrentChange(val) {
+      this.$http.get('/article').then((res) => {
+        this.articleList = [];
+        const min = (val - 1) * this.articlePageSize;
+        const max = min + this.articlePageSize;
+        for (let i = min; i < max; i += 1) {
+          if (res.data.data[i]) {
+            this.articleList.push(res.data.data[i]);
+          }
+        }
+      });
+    },
+    cardDetail() {
+      this.dialogTableVisible = true;
+    },
+  },
+  created() {
+    this.handleCurrentChange(1);
   },
 };
 </script>
