@@ -69,6 +69,20 @@ const ArticleData = [
     last_modified_date: '2022/07/02',
     file_download_path: null,
     github_download_path: 'https://github.com/TakeOver5/C',
+    message: [
+      {
+        message_id: 1,
+        content: '寫得好',
+      },
+      {
+        message_id: 2,
+        content: '謝謝',
+      },
+      {
+        message_id: 3,
+        content: '很爛',
+      },
+    ],
   },
   {
     article_id: 2,
@@ -81,6 +95,7 @@ const ArticleData = [
     last_modified_date: '2022/07/02',
     file_download_path: null,
     github_download_path: 'https://github.com/TakeOver5/C',
+    message: [],
   },
   {
     article_id: 3,
@@ -93,6 +108,7 @@ const ArticleData = [
     last_modified_date: '2022/07/02',
     file_download_path: null,
     github_download_path: 'https://github.com/TakeOver5/C',
+    message: [],
   },
   {
     article_id: 4,
@@ -105,6 +121,7 @@ const ArticleData = [
     last_modified_date: '2022/07/02',
     file_download_path: null,
     github_download_path: 'https://github.com/TakeOver5/C',
+    message: [],
   },
   {
     article_id: 5,
@@ -117,6 +134,7 @@ const ArticleData = [
     last_modified_date: '2022/07/02',
     file_download_path: null,
     github_download_path: 'https://github.com/TakeOver5/C',
+    message: [],
   },
   {
     article_id: 6,
@@ -129,6 +147,7 @@ const ArticleData = [
     last_modified_date: '2022/07/02',
     file_download_path: null,
     github_download_path: 'https://github.com/TakeOver5/C',
+    message: [],
   },
   {
     article_id: 7,
@@ -141,6 +160,7 @@ const ArticleData = [
     last_modified_date: '2022/07/02',
     file_download_path: null,
     github_download_path: 'https://github.com/TakeOver5/C',
+    message: [],
   },
 ];
 

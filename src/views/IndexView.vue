@@ -50,7 +50,7 @@
             <el-col :span="8" :lg="8" :sm="12" :xs="24"
             v-for="item in articleList" :key="item.article_id">
               <!-- 卡片 -->
-              <el-card :body-style="{ padding: '0px' }" @click="cardDetail">
+              <el-card :body-style="{ padding: '0px' }" @click="cardDetail(item)">
                 <img
                   :src="item.cover"
                   class="image"
@@ -144,35 +144,142 @@
     </el-dialog>
   </div>
   <!-- 註冊結束 -->
-  <!-- 卡片對話框 -->
-  <el-dialog v-model="dialogTableVisible"
+  <!-- 卡片明細對話框 -->
+  <el-dialog v-model="cardDetaildialog"
   width="80%" max-height="80%">
     <el-row :gutter="8">
-      <el-col :span="17">
-        <el-row :gutter="8">
-          <el-col>
-            <div>自動避障六足音效機器人</div>
-          </el-col>
-          <el-col>
-            <div>寫程式、玩科技，好玩就能夠學得快，組裝一部仿昆蟲動作行走的六足機器人
-              ，組好立刻就能玩。除了行走外，也加上了超音波測距模組，可以偵測前方的障礙物，
-              讓六足機器人可以自動躲避障礙，暢行無阻。我們還為六足機器人加上了圓圓可愛的喇叭，
-              偵測到障礙物時，會發出驚嚇的尖叫聲，再搭配惹人憐愛的發抖動作，讓六足機器人更加趣味好玩。
-            </div>
-          </el-col>
-        </el-row>
+      <el-col>
+        <h1>{{cardDetaildData.title}}</h1>
       </el-col>
-      <el-col :span="7">
+      <el-col>
         <div>
-          <el-avatar size="default" src="https://i.pravatar.cc/300" style="margin-right:8px;" />
+          <p><el-avatar size="default" src="https://i.pravatar.cc/300" style="margin-right:8px;" />台灣阿成</p>
         </div>
         <div>
-          <p>台灣阿成</p>
+          <p>更新時間</p>
         </div>
+      </el-col>
+      <el-col>
+        <el-image :src="cardDetaildData.cover" fit="none" />
+      </el-col>
+      <el-col>
+        <p>{{cardDetaildData.introduction}}</p>
+      </el-col>
+      <el-col>
+        <p>{{cardDetaildData.content}}</p>
+      </el-col>
+      <el-col>
+        <p v-if="cardDetaildData.file_download_path">{{cardDetaildData.file_download_path}}</p>
+        <el-empty v-else description="沒有檔案" />
+
+      </el-col>
+      <el-col>
+        <p>{{cardDetaildData.github_download_path}}</p>
+      </el-col>
+    </el-row>
+    <el-row>
+      <el-col v-for="message in cardDetaildData.message" :key="message.message_id">
+        <p>{{message.content}}</p>
       </el-col>
     </el-row>
   </el-dialog>
   <!-- 卡片對話框結束 -->
+  <!-- 增加文章按鈕 -->
+  <el-button type="primary" circle
+  style="position: fixed; right: 40px; bottom: 40px;
+  width: 80px; height: 80px;"
+  @click="addArticleDialog = true"
+  v-if="auth">
+    <el-icon :size="50" :color="color">
+        <CirclePlusFilled />
+    </el-icon>
+  </el-button>
+  <!--會員管理按鈕-->
+  <el-button type="danger" circle
+  style="position: fixed; right: 40px; bottom: 140px;
+  width: 80px; height: 80px;"
+  @click="manageDialog = true"
+  v-if="auth==='admin'">
+    <el-icon :size="50" :color="color">
+        <User />
+    </el-icon>
+  </el-button>
+  <!--會員管理結束-->
+  <!--文章管理按鈕-->
+  <el-button type="warning" circle
+  style="position: fixed; right: 40px; bottom: 240px;
+  width: 80px; height: 80px;"
+  @click="manageDialog = true"
+  v-if="auth==='admin'">
+    <el-icon :size="50" :color="color">
+        <EditPen />
+    </el-icon>
+  </el-button>
+  <!--文章管理結束-->
+  <!-- 文章編輯頁面 -->
+  <el-dialog v-model="addArticleDialog"
+  width="80%" max-height="80%">
+    <el-form
+      label-width="100px"
+      style="max-width: 460px"
+    >
+      <el-form-item label="標題">
+        <el-input />
+      </el-form-item>
+      <el-form-item label="介紹">
+        <el-input />
+      </el-form-item>
+      <el-form-item label="內文">
+        <el-input />
+      </el-form-item>
+      <el-form-item>
+        <p>
+          封面
+        </p>
+        <el-upload
+          class="avatar-uploader"
+          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+          :show-file-list="false"
+          :on-success="handleAvatarSuccess"
+          :before-upload="beforeAvatarUpload"
+        >
+          <img v-if="imageUrl" :src="imageUrl" class="avatar" alt="" />
+          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+        </el-upload>
+      </el-form-item>
+      <el-form-item>
+        <el-upload
+          class="upload-demo"
+          drag
+          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+          multiple
+        >
+          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+          <div class="el-upload__text">
+            Drop file here or <em>click to upload</em>
+          </div>
+          <template #tip>
+            <div class="el-upload__tip">
+              jpg/png files with a size less than 500kb
+            </div>
+          </template>
+        </el-upload>
+      </el-form-item>
+    </el-form>
+  </el-dialog>
+  <!-- 文章編輯頁面結束 -->
+  <!-- 管理員頁面 -->
+  <el-dialog v-model="manageDialog"
+  width="80%" max-height="80%" title="文章管理">
+    <el-table :data="articleTableData" border style="width: 720px">
+      <el-table-column prop="article_id" label="文章編號" width="180" />
+      <el-table-column prop="title" label="文章標題" width="180" />
+      <el-table-column prop="member_id" label="作者" width="180" />
+      <el-table-column prop="last_modified_date" label="最後修改日期" width="180" />
+    </el-table>
+  </el-dialog>
+  <!-- 管理員頁面結束 -->
+
 </template>
 
 <script>
@@ -248,7 +355,13 @@ export default {
       user: {},
       articleList: [],
       articlePageSize: 3,
-      dialogTableVisible: false,
+      cardDetaildialog: false,
+      cardDetaildData: {},
+      auth: '',
+      addArticleDialog: false,
+      manageDialog: false,
+      memberTableData: [],
+      articleTableData: [],
     };
   },
   methods: {
@@ -258,6 +371,7 @@ export default {
         if (valid) {
           this.$http.post('/login', { ...this.loginForm }).then((res) => {
             let loginFlag = false;
+            this.memberTableData = res.data.data;
             for (let i = 0; i < res.data.data.length; i += 1) {
               if (res.data.data[i].email === this.loginForm.account
               && res.data.data[i].password === this.loginForm.password) {
@@ -265,6 +379,7 @@ export default {
                 this.$store.commit('setAuth', res.data.data[i].auth);
                 this.$store.commit('setID', res.data.data[i].id);
                 this.$store.commit('setEMAIL', res.data.data[i].email);
+                this.auth = res.data.data[i].auth;
                 this.user = res.data.data[i];
                 break;
               }
@@ -297,6 +412,7 @@ export default {
       this.$store.commit('setID', null);
       this.$store.commit('setEMAIL', null);
       this.user = {};
+      this.auth = '';
       ElMessage({
         showClose: true,
         message: '登出成功',
@@ -344,12 +460,16 @@ export default {
         }
       });
     },
-    cardDetail() {
-      this.dialogTableVisible = true;
+    cardDetail(item) {
+      this.cardDetaildData = item;
+      this.cardDetaildialog = true;
     },
   },
   created() {
     this.handleCurrentChange(1);
+    this.$http.get('/article').then((res) => {
+      this.articleTableData = res.data.data;
+    });
   },
 };
 </script>
@@ -545,6 +665,12 @@ export default {
     width: 100%;
     padding-top: 36px;
   }
+}
+
+.avatar-uploader .avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
 }
 
 @media (max-width: 575.99px) {  }
