@@ -13,7 +13,7 @@ import router from './router';
 import store from './store';
 
 // 請求模擬
-require('./mock');
+// require('./mock');
 
 const app = createApp(App);
 

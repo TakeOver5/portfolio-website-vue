@@ -14,17 +14,17 @@
               >
                 <el-menu-item index="0"></el-menu-item>
                 <div class="flex-grow"></div>
-                <el-menu-item index="1" @click="loginDialog = true" v-if="!user.id">
+                <el-menu-item index="1" @click="loginDialog = true" v-if="!user.memberId">
                   登入
                 </el-menu-item>
-                <el-menu-item index="2" v-if="!user.id" @click="registerDialog = true">
+                <el-menu-item index="2" v-if="!user.memberId" @click="registerDialog = true">
                   註冊
                 </el-menu-item>
-                <el-menu-item index="3" v-if="user.id">
+                <el-menu-item index="3" v-if="user.memberId">
                   <el-avatar  size="default" :src="user.avatar" style="margin-right:8px;" />
                   {{user.name}}
                 </el-menu-item>
-                <el-menu-item index="4" v-if="user.id" @click="logout">退出</el-menu-item>
+                <el-menu-item index="4" v-if="user.memberId" @click="logout">退出</el-menu-item>
               </el-menu>
             </el-col>
           </el-row>
@@ -92,8 +92,8 @@
         ref="ruleloginForm"
         :rules="loginRules"
       >
-        <el-form-item label="信箱" prop="account">
-          <el-input v-model="loginForm.account" />
+        <el-form-item label="信箱" prop="username">
+          <el-input v-model="loginForm.username" />
         </el-form-item>
         <el-form-item label="密碼" prop="password">
           <el-input v-model="loginForm.password" type="password" />
@@ -314,7 +314,7 @@ export default {
       loginForm: {},
       registerForm: {},
       loginRules: {
-        account: [
+        username: [
           {
             type: 'email', required: true, message: '請輸入電子信箱', trigger: 'blur',
           },
@@ -368,23 +368,21 @@ export default {
     /* 登入按鈕事件 */
     login(formName) {
       this.$refs[formName].validate((valid) => {
+        console.log(this.loginForm);
         if (valid) {
-          this.$http.post('/login', { ...this.loginForm }).then((res) => {
-            let loginFlag = false;
-            this.memberTableData = res.data.data;
-            for (let i = 0; i < res.data.data.length; i += 1) {
-              if (res.data.data[i].email === this.loginForm.account
-              && res.data.data[i].password === this.loginForm.password) {
-                loginFlag = true;
-                this.$store.commit('setAuth', res.data.data[i].auth);
-                this.$store.commit('setID', res.data.data[i].id);
-                this.$store.commit('setEMAIL', res.data.data[i].email);
-                this.auth = res.data.data[i].auth;
-                this.user = res.data.data[i];
-                break;
-              }
-            }
-            if (loginFlag) {
+          const api = `${process.env.VUE_APP_API}login`;
+          this.$http.post(api, { ...this.loginForm }).then((res) => {
+            console.log(res.data.data);
+            if (res.data.data) {
+              this.$store.commit('setAuth', res.data.data.authority);
+              this.$store.commit('setID', res.data.data.memberId);
+              this.$store.commit('setEMAIL', res.data.data.email);
+              this.$store.commit('setUSERNAME', res.data.data.name);
+              this.$store.commit('setAVATAR', res.data.data.avatar);
+              this.$store.commit('setTOKEN', res.headers.authorization);
+              this.auth = res.data.data.authority;
+              this.user = res.data.data;
+              this.user.avatar = `data:image/jpeg;base64,${this.user.avatar}`;
               ElMessage({
                 showClose: true,
                 message: '登入成功',
@@ -408,15 +406,23 @@ export default {
       this.$refs[formName].resetFields();
     },
     logout() {
-      this.$store.commit('setAuth', null);
-      this.$store.commit('setID', null);
-      this.$store.commit('setEMAIL', null);
-      this.user = {};
-      this.auth = '';
-      ElMessage({
-        showClose: true,
-        message: '登出成功',
-        type: 'warning',
+      const api = `${process.env.VUE_APP_API}logout`;
+      this.$http.get(api).then((res) => {
+        if (res.data.code === 200) {
+          this.$store.commit('setAuth', null);
+          this.$store.commit('setID', null);
+          this.$store.commit('setEMAIL', null);
+          this.$store.commit('setUSERNAME', null);
+          this.$store.commit('setAVATAR', null);
+          this.$store.commit('setTOKEN', null);
+          this.user = {};
+          this.auth = '';
+          ElMessage({
+            showClose: true,
+            message: '登出成功',
+            type: 'warning',
+          });
+        }
       });
     },
     register(formName) {
