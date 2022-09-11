@@ -7,6 +7,9 @@ export default createStore({
     AUTH: '',
     ID: '',
     EMAIL: '',
+    AVATAR: '',
+    USERNAME: '',
+    TOKEN: '',
   },
   getters: {
   },
@@ -23,6 +26,19 @@ export default createStore({
       state.EMAIL = email;
     },
     getEMAIL: (state) => state.EMAIL,
+    setAVATAR: (state, avatar) => {
+      state.AVATAR = avatar;
+    },
+    getAVATAR: (state) => state.AVATAR,
+    setUSERNAME: (state, username) => {
+      state.USERNAME = username;
+    },
+    getUSESRNAME: (state) => state.USERNAME,
+    setTOKEN: (state, token) => {
+      state.TOKEN = token;
+    },
+    getTOKEN: (state) => state.TOKEN,
+
   },
   actions: {
   },

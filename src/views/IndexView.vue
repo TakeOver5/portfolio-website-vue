@@ -14,17 +14,17 @@
               >
                 <el-menu-item index="0"></el-menu-item>
                 <div class="flex-grow"></div>
-                <el-menu-item index="1" @click="loginDialog = true" v-if="!user.id">
+                <el-menu-item index="1" @click="loginDialog = true" v-if="!user.memberId">
                   登入
                 </el-menu-item>
-                <el-menu-item index="2" v-if="!user.id" @click="registerDialog = true">
+                <el-menu-item index="2" v-if="!user.memberId" @click="registerDialog = true">
                   註冊
                 </el-menu-item>
-                <el-menu-item index="3" v-if="user.id">
+                <el-menu-item index="3" v-if="user.memberId">
                   <el-avatar  size="default" :src="user.avatar" style="margin-right:8px;" />
                   {{user.name}}
                 </el-menu-item>
-                <el-menu-item index="4" v-if="user.id" @click="logout">退出</el-menu-item>
+                <el-menu-item index="4" v-if="user.memberId" @click="logout">退出</el-menu-item>
               </el-menu>
             </el-col>
           </el-row>
@@ -47,25 +47,31 @@
         <!-- router-view/ -->
         <div class="main-content-wrap">
           <el-row :gutter="16">
-            <el-col :span="8" :lg="8" :sm="12" :xs="24" v-for="item in 7" :key="item">
-              <el-card :body-style="{ padding: '0px' }">
+            <el-col :span="8" :lg="8" :sm="12" :xs="24"
+            v-for="item in articleList" :key="item.article_id">
+              <!-- 卡片 -->
+              <el-card :body-style="{ padding: '0px' }" @click="cardDetail(item)">
                 <img
-                  src="https://picsum.photos/400/380?random={{item}}"
+                  :src="item.cover"
                   class="image"
-                  alt="漢堡"
+                  :alt="item.title"
                 />
                 <div class="txt">
-                  <h2>你一定愛讀的極簡國學：國學包括經史子集蒙，從112本浩瀚經典中， 薈萃出生活與生存的智慧。</h2>
-                  <p>我們為什麼要讀國學？因為這是文學素養的入門，讓你精準用字、懂語感、通世事。但國學普遍深奧難懂且資料龐大，
-                    包括先秦經典及諸子、兩漢經學、魏晉玄學、宋明理學和同時期的漢賦、六朝駢文、唐宋詩詞、元曲，到明清小說與歷代史學，
-                    沒有人有時間都看過，更難以理解其內容</p>
+                  <h2>{{ item.title }}</h2>
+                  <p>{{ item.introduction }}</p>
                 </div>
               </el-card>
+              <!-- 卡片結束 -->
             </el-col>
           </el-row>
+          <!-- 分頁 -->
           <el-row class="pagination">
-            <el-pagination background layout="prev, pager, next" :total="300" />
+            <el-pagination background layout="prev, pager, next"
+            :total="7"
+            :page-size="articlePageSize"
+            @current-change="handleCurrentChange" />
           </el-row>
+          <!-- 分頁結束 -->
           <el-row class="footer">
             <div class="copyright">
               <p>版權宣告</p>
@@ -86,8 +92,8 @@
         ref="ruleloginForm"
         :rules="loginRules"
       >
-        <el-form-item label="信箱" prop="account">
-          <el-input v-model="loginForm.account" />
+        <el-form-item label="信箱" prop="username">
+          <el-input v-model="loginForm.username" />
         </el-form-item>
         <el-form-item label="密碼" prop="password">
           <el-input v-model="loginForm.password" type="password" />
@@ -137,6 +143,143 @@
       </el-form>
     </el-dialog>
   </div>
+  <!-- 註冊結束 -->
+  <!-- 卡片明細對話框 -->
+  <el-dialog v-model="cardDetaildialog"
+  width="80%" max-height="80%">
+    <el-row :gutter="8">
+      <el-col>
+        <h1>{{cardDetaildData.title}}</h1>
+      </el-col>
+      <el-col>
+        <div>
+          <p><el-avatar size="default" src="https://i.pravatar.cc/300" style="margin-right:8px;" />台灣阿成</p>
+        </div>
+        <div>
+          <p>更新時間</p>
+        </div>
+      </el-col>
+      <el-col>
+        <el-image :src="cardDetaildData.cover" fit="none" />
+      </el-col>
+      <el-col>
+        <p>{{cardDetaildData.introduction}}</p>
+      </el-col>
+      <el-col>
+        <p>{{cardDetaildData.content}}</p>
+      </el-col>
+      <el-col>
+        <p v-if="cardDetaildData.file_download_path">{{cardDetaildData.file_download_path}}</p>
+        <el-empty v-else description="沒有檔案" />
+
+      </el-col>
+      <el-col>
+        <p>{{cardDetaildData.github_download_path}}</p>
+      </el-col>
+    </el-row>
+    <el-row>
+      <el-col v-for="message in cardDetaildData.message" :key="message.message_id">
+        <p>{{message.content}}</p>
+      </el-col>
+    </el-row>
+  </el-dialog>
+  <!-- 卡片對話框結束 -->
+  <!-- 增加文章按鈕 -->
+  <el-button type="primary" circle
+  style="position: fixed; right: 40px; bottom: 40px;
+  width: 80px; height: 80px;"
+  @click="addArticleDialog = true"
+  v-if="auth">
+    <el-icon :size="50" :color="color">
+        <CirclePlusFilled />
+    </el-icon>
+  </el-button>
+  <!--會員管理按鈕-->
+  <el-button type="danger" circle
+  style="position: fixed; right: 40px; bottom: 140px;
+  width: 80px; height: 80px;"
+  @click="manageDialog = true"
+  v-if="auth==='admin'">
+    <el-icon :size="50" :color="color">
+        <User />
+    </el-icon>
+  </el-button>
+  <!--會員管理結束-->
+  <!--文章管理按鈕-->
+  <el-button type="warning" circle
+  style="position: fixed; right: 40px; bottom: 240px;
+  width: 80px; height: 80px;"
+  @click="manageDialog = true"
+  v-if="auth==='admin'">
+    <el-icon :size="50" :color="color">
+        <EditPen />
+    </el-icon>
+  </el-button>
+  <!--文章管理結束-->
+  <!-- 文章編輯頁面 -->
+  <el-dialog v-model="addArticleDialog"
+  width="80%" max-height="80%">
+    <el-form
+      label-width="100px"
+      style="max-width: 460px"
+    >
+      <el-form-item label="標題">
+        <el-input />
+      </el-form-item>
+      <el-form-item label="介紹">
+        <el-input />
+      </el-form-item>
+      <el-form-item label="內文">
+        <el-input />
+      </el-form-item>
+      <el-form-item>
+        <p>
+          封面
+        </p>
+        <el-upload
+          class="avatar-uploader"
+          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+          :show-file-list="false"
+          :on-success="handleAvatarSuccess"
+          :before-upload="beforeAvatarUpload"
+        >
+          <img v-if="imageUrl" :src="imageUrl" class="avatar" alt="" />
+          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+        </el-upload>
+      </el-form-item>
+      <el-form-item>
+        <el-upload
+          class="upload-demo"
+          drag
+          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
+          multiple
+        >
+          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+          <div class="el-upload__text">
+            Drop file here or <em>click to upload</em>
+          </div>
+          <template #tip>
+            <div class="el-upload__tip">
+              jpg/png files with a size less than 500kb
+            </div>
+          </template>
+        </el-upload>
+      </el-form-item>
+    </el-form>
+  </el-dialog>
+  <!-- 文章編輯頁面結束 -->
+  <!-- 管理員頁面 -->
+  <el-dialog v-model="manageDialog"
+  width="80%" max-height="80%" title="文章管理">
+    <el-table :data="articleTableData" border style="width: 720px">
+      <el-table-column prop="article_id" label="文章編號" width="180" />
+      <el-table-column prop="title" label="文章標題" width="180" />
+      <el-table-column prop="member_id" label="作者" width="180" />
+      <el-table-column prop="last_modified_date" label="最後修改日期" width="180" />
+    </el-table>
+  </el-dialog>
+  <!-- 管理員頁面結束 -->
+
 </template>
 
 <script>
@@ -171,7 +314,7 @@ export default {
       loginForm: {},
       registerForm: {},
       loginRules: {
-        account: [
+        username: [
           {
             type: 'email', required: true, message: '請輸入電子信箱', trigger: 'blur',
           },
@@ -210,27 +353,36 @@ export default {
         ],
       },
       user: {},
+      articleList: [],
+      articlePageSize: 3,
+      cardDetaildialog: false,
+      cardDetaildData: {},
+      auth: '',
+      addArticleDialog: false,
+      manageDialog: false,
+      memberTableData: [],
+      articleTableData: [],
     };
   },
   methods: {
     /* 登入按鈕事件 */
     login(formName) {
       this.$refs[formName].validate((valid) => {
+        console.log(this.loginForm);
         if (valid) {
-          this.$http.post('/login', { ...this.loginForm }).then((res) => {
-            let loginFlag = false;
-            for (let i = 0; i < res.data.data.length; i += 1) {
-              if (res.data.data[i].email === this.loginForm.account
-              && res.data.data[i].password === this.loginForm.password) {
-                loginFlag = true;
-                this.$store.commit('setAuth', res.data.data[i].auth);
-                this.$store.commit('setID', res.data.data[i].id);
-                this.$store.commit('setEMAIL', res.data.data[i].email);
-                this.user = res.data.data[i];
-                break;
-              }
-            }
-            if (loginFlag) {
+          const api = `${process.env.VUE_APP_API}login`;
+          this.$http.post(api, { ...this.loginForm }).then((res) => {
+            console.log(res.data.data);
+            if (res.data.data) {
+              this.$store.commit('setAuth', res.data.data.authority);
+              this.$store.commit('setID', res.data.data.memberId);
+              this.$store.commit('setEMAIL', res.data.data.email);
+              this.$store.commit('setUSERNAME', res.data.data.name);
+              this.$store.commit('setAVATAR', res.data.data.avatar);
+              this.$store.commit('setTOKEN', res.headers.authorization);
+              this.auth = res.data.data.authority;
+              this.user = res.data.data;
+              this.user.avatar = `data:image/jpeg;base64,${this.user.avatar}`;
               ElMessage({
                 showClose: true,
                 message: '登入成功',
@@ -254,14 +406,23 @@ export default {
       this.$refs[formName].resetFields();
     },
     logout() {
-      this.$store.commit('setAuth', null);
-      this.$store.commit('setID', null);
-      this.$store.commit('setEMAIL', null);
-      this.user = {};
-      ElMessage({
-        showClose: true,
-        message: '登出成功',
-        type: 'warning',
+      const api = `${process.env.VUE_APP_API}logout`;
+      this.$http.get(api).then((res) => {
+        if (res.data.code === 200) {
+          this.$store.commit('setAuth', null);
+          this.$store.commit('setID', null);
+          this.$store.commit('setEMAIL', null);
+          this.$store.commit('setUSERNAME', null);
+          this.$store.commit('setAVATAR', null);
+          this.$store.commit('setTOKEN', null);
+          this.user = {};
+          this.auth = '';
+          ElMessage({
+            showClose: true,
+            message: '登出成功',
+            type: 'warning',
+          });
+        }
       });
     },
     register(formName) {
@@ -288,6 +449,33 @@ export default {
         return false;
       });
     },
+    loadArticleList() {
+      this.$http.get('/article').then((res) => {
+        this.articleList = res.data.data;
+      });
+    },
+    handleCurrentChange(val) {
+      this.$http.get('/article').then((res) => {
+        this.articleList = [];
+        const min = (val - 1) * this.articlePageSize;
+        const max = min + this.articlePageSize;
+        for (let i = min; i < max; i += 1) {
+          if (res.data.data[i]) {
+            this.articleList.push(res.data.data[i]);
+          }
+        }
+      });
+    },
+    cardDetail(item) {
+      this.cardDetaildData = item;
+      this.cardDetaildialog = true;
+    },
+  },
+  created() {
+    this.handleCurrentChange(1);
+    this.$http.get('/article').then((res) => {
+      this.articleTableData = res.data.data;
+    });
   },
 };
 </script>
@@ -483,6 +671,12 @@ export default {
     width: 100%;
     padding-top: 36px;
   }
+}
+
+.avatar-uploader .avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
 }
 
 @media (max-width: 575.99px) {  }
