@@ -124,6 +124,9 @@
         ref="ruleRegisterForm"
         :rules="registerRules"
       >
+        <el-form-item label="暱稱" prop="name">
+          <el-input v-model="registerForm.name" />
+        </el-form-item>
         <el-form-item label="電子信箱" prop="email">
           <el-input v-model="registerForm.email" />
         </el-form-item>
@@ -329,6 +332,14 @@ export default {
         ],
       },
       registerRules: {
+        name: [
+          {
+            required: true, message: '請輸入暱稱', trigger: 'blur',
+          },
+          {
+            max: 12, message: '暱稱最多12個字元', trigger: 'change',
+          },
+        ],
         email: [
           {
             type: 'email', required: true, message: '請輸入電子信箱', trigger: 'blur',
@@ -428,7 +439,8 @@ export default {
     register(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          this.$http.post('/register', { ...this.registerForm }).then((res) => {
+          const api = `${process.env.VUE_APP_API}register`;
+          this.$http.post(api, { ...this.registerForm }).then((res) => {
             console.log(res);
             if (res.data.code === 200) {
               ElMessage({
