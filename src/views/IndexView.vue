@@ -220,56 +220,46 @@
   </el-button>
   <!--文章管理結束-->
   <!-- 文章編輯頁面 -->
-  <el-dialog v-model="addArticleDialog"
-  width="80%" max-height="80%">
-    <el-form
-      label-width="100px"
-      style="max-width: 460px"
-    >
-      <el-form-item label="標題">
-        <el-input />
-      </el-form-item>
-      <el-form-item label="介紹">
-        <el-input />
-      </el-form-item>
-      <el-form-item label="內文">
-        <el-input />
-      </el-form-item>
-      <el-form-item>
-        <p>
-          封面
-        </p>
-        <el-upload
-          class="avatar-uploader"
-          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
-          :show-file-list="false"
-          :on-success="handleAvatarSuccess"
-          :before-upload="beforeAvatarUpload"
-        >
-          <img v-if="imageUrl" :src="imageUrl" class="avatar" alt="" />
-          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-        </el-upload>
-      </el-form-item>
-      <el-form-item>
-        <el-upload
-          class="upload-demo"
-          drag
-          action="https://run.mocky.io/v3/9d059bf9-4660-45f2-925d-ce80ad6c4d15"
-          multiple
-        >
-          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-          <div class="el-upload__text">
-            Drop file here or <em>click to upload</em>
-          </div>
-          <template #tip>
-            <div class="el-upload__tip">
-              jpg/png files with a size less than 500kb
-            </div>
-          </template>
-        </el-upload>
-      </el-form-item>
-    </el-form>
-  </el-dialog>
+  <div class="editArticle">
+    <el-dialog v-model="addArticleDialog" title="新增文章"
+    max-width="1000px" width="80%"
+    align-center>
+      <el-form
+        label-width="200px"
+        style="max-width: 460px"
+        label-position="top"
+      >
+        <el-form-item label="標題">
+          <el-input placeholder="請輸入專題標題" />
+        </el-form-item>
+        <el-form-item label="介紹">
+          <el-input placeholder="請在 80 個字內簡短的介紹專題" />
+        </el-form-item>
+        <el-form-item label="內文">
+          <el-input />
+        </el-form-item>
+        <el-form-item label="封面">
+          <el-upload
+            class="avatar-uploader"
+            :show-file-list="false"
+            ref="upload"
+            :limit="1"
+            :on-remove="handleRemove"
+            :on-change="handleEditChange"
+            :before-upload="uploadPreview"
+            accept=".png, .jpg"
+            action=""
+          >
+            <img v-if="imageUrl" :src="imageUrl" class="avatar" alt="" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="GitHub 路徑">
+          <el-input placeholder="請輸入專題的 GitHub 路徑" />
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
   <!-- 文章編輯頁面結束 -->
   <!-- 管理員頁面 -->
   <el-dialog v-model="manageDialog"
@@ -369,10 +359,12 @@ export default {
       cardDetaildialog: false,
       cardDetaildData: {},
       auth: '',
-      addArticleDialog: false,
+      addArticleDialog: true,
       manageDialog: false,
       memberTableData: [],
       articleTableData: [],
+      param: {},
+      imageUrl: '',
     };
   },
   methods: {
@@ -481,6 +473,49 @@ export default {
     cardDetail(item) {
       this.cardDetaildData = item;
       this.cardDetaildialog = true;
+    },
+    // before-upload
+    // 上傳文件之前的鈎子，參數為上傳的文件，
+    // 若返回 false 或返回 Promise 且被 reject，則停止上傳
+    uploadPreview(file) {
+      console.log('檔案', file);
+      const isPng = /^.png$/.test(file.name.substring(file.name.lastIndexOf('.')));
+      const isJpg = /^.jpg$/.test(file.name.substring(file.name.lastIndexOf('.')));
+      // bit 位元、byte 位元組、KB
+      // 1Byte = 8Bits、1KB = 1024Bytes
+      const isLt100KB = file.size / 1024 < 2048;
+      console.log(file.size);
+      if (!(isPng || isJpg)) {
+        ElMessage.error('上傳圖片只能是 PNG 或 JPG 格式');
+        return false;
+      }
+      if (!isLt100KB) {
+        console.log(file.size / 1024);
+        ElMessage.error('上傳圖片不能超過 2MB');
+        return false;
+      }
+
+      // 判斷圖片長寛
+      const reader = new FileReader();
+      // 使用 base-64 進行編碼，
+      reader.readAsDataURL(file);
+
+      // 檔案轉換完成後執行
+      reader.onload = (theFile) => {
+        console.log(theFile);
+        const image = new Image();
+        image.src = theFile.target.result;
+        // 圖片載入後要進行的操作
+        image.onload = () => {
+          const { width, height } = image;
+          if (width !== 500 || height !== 500) {
+            ElMessage.error('請上傳 500*500 圖片');
+          } else {
+            this.imageUrl = image.src;
+          }
+        };
+      };
+      return false;
     },
   },
   created() {
@@ -684,11 +719,19 @@ export default {
     padding-top: 36px;
   }
 }
-
-.avatar-uploader .avatar {
-  width: 178px;
-  height: 178px;
-  display: block;
+.editArticle {
+  .avatar-uploader .avatar {
+    width: 500px;
+    height: 500px;
+    display: block;
+  }
+  .el-icon.avatar-uploader-icon {
+    font-size: 28px;
+    color: #8c939d;
+    width: 500px;
+    height: 500px;
+    text-align: center;
+  }
 }
 
 @media (max-width: 575.99px) {  }
