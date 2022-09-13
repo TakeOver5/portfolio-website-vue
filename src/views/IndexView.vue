@@ -228,17 +228,23 @@
         label-width="200px"
         style="max-width: 460px"
         label-position="top"
+        :model="editArticleForm"
+        ref="ruleEditArticleForm"
+        :rules="editArticleRules"
       >
-        <el-form-item label="標題">
-          <el-input placeholder="請輸入專題標題" />
+        <el-form-item label="標題" prop="title" >
+          <el-input placeholder="請輸入專題標題" v-model="editArticleForm.title" />
         </el-form-item>
-        <el-form-item label="介紹">
-          <el-input placeholder="請在 80 個字內簡短的介紹專題" />
+        <el-form-item label="介紹" prop="introduction" >
+          <el-input placeholder="請在 80 個字內簡短的介紹專題" v-model="editArticleForm.introduction" />
         </el-form-item>
-        <el-form-item label="內文">
-          <el-input />
+        <el-form-item label="內文" prop="content" >
+          <el-input placeholder="請輸入內文"
+          type="textarea"
+          :autosize="{ minRows: 5}"
+          v-model="editArticleForm.content" />
         </el-form-item>
-        <el-form-item label="封面">
+        <el-form-item label="封面（圖片大小要求 500*500，且圖片容量需小於 2MB）">
           <el-upload
             class="avatar-uploader"
             :show-file-list="false"
@@ -254,8 +260,15 @@
             <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
           </el-upload>
         </el-form-item>
-        <el-form-item label="GitHub 路徑">
-          <el-input placeholder="請輸入專題的 GitHub 路徑" />
+        <el-form-item label="GitHub 路徑" prop="git_file_path" >
+          <el-input placeholder="請輸入專題的 GitHub 路徑"
+          v-model="editArticleForm.git_file_path" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="success"
+          @click="editArt('ruleEditArticleForm')">送出</el-button>
+          <el-button type="danger"
+          @click="deleteEditArticleForm">清除</el-button>
         </el-form-item>
       </el-form>
     </el-dialog>
@@ -353,6 +366,44 @@ export default {
           },
         ],
       },
+      editArticleRules: {
+        title: [
+          {
+            required: true, message: '請輸入文章標題', trigger: 'blur',
+          },
+          {
+            max: 30, message: '標題最多 30 個字元', trigger: 'change',
+          },
+        ],
+        introduction: [
+          {
+            required: true, message: '請簡短的輸入介紹', trigger: 'blur',
+          },
+          {
+            max: 90, message: '介紹最多 90 個字元', trigger: 'change',
+          },
+        ],
+        content: [
+          {
+            required: true, message: '請輸入內文', trigger: 'blur',
+          },
+          {
+            max: 65535, message: '內文最多 65535 個字元', trigger: 'change',
+          },
+        ],
+        git_file_path: [
+          {
+            required: true, message: '請輸入 GitHub 路徑', trigger: 'blur',
+          },
+          {
+            max: 100, message: '路徑請在 100 個字元以內', trigger: 'change',
+          },
+          {
+            pattern: /^https:\/\/github\.com\/[^\s]+\/[^\s]/,
+            message: 'GitHub 路徑有誤',
+          },
+        ],
+      },
       user: {},
       articleList: [],
       articlePageSize: 3,
@@ -365,6 +416,13 @@ export default {
       articleTableData: [],
       param: {},
       imageUrl: '',
+      editArticleForm: {
+        title: '',
+        introduction: '',
+        content: '',
+        cover: '',
+        git_file_path: '',
+      },
     };
   },
   methods: {
@@ -420,6 +478,7 @@ export default {
           this.$store.commit('setTOKEN', null);
           this.user = {};
           this.auth = '';
+          localStorage.clear();
           ElMessage({
             showClose: true,
             message: '登出成功',
@@ -478,7 +537,7 @@ export default {
     // 上傳文件之前的鈎子，參數為上傳的文件，
     // 若返回 false 或返回 Promise 且被 reject，則停止上傳
     uploadPreview(file) {
-      console.log('檔案', file);
+      this.editArticleForm.cover = file;
       const isPng = /^.png$/.test(file.name.substring(file.name.lastIndexOf('.')));
       const isJpg = /^.jpg$/.test(file.name.substring(file.name.lastIndexOf('.')));
       // bit 位元、byte 位元組、KB
@@ -517,12 +576,59 @@ export default {
       };
       return false;
     },
+    // 上傳文章
+    editArt(formName) {
+      if (!this.imageUrl) {
+        ElMessage.error('還沒上傳封面圖片');
+        return;
+      }
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          const form = new FormData();
+          form.append('title', this.editArticleForm.title);
+          form.append('introduction', this.editArticleForm.introduction);
+          form.append('content', this.editArticleForm.content);
+          form.append('cover', this.editArticleForm.cover);
+          form.append('git_file_path', this.editArticleForm.git_file_path);
+          const api = `${process.env.VUE_APP_API}article`;
+          console.log(this.editArticleForm.cover);
+          this.$http.post(api, form, {
+            headers: {
+              'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>',
+              authorization: localStorage.getItem('Authorization'),
+            },
+          }).then((res) => {
+            console.log(res);
+            if (res.data.code === 200) {
+              ElMessage({
+                showClose: true,
+                message: '上傳成功',
+                type: 'success',
+              });
+              this.deleteEditArticleForm();
+              this.addArticleDialog = false;
+            } else {
+              ElMessage({
+                showClose: true,
+                message: '上傳失敗',
+                type: 'error',
+              });
+            }
+          });
+        }
+        return false;
+      });
+    },
+    deleteEditArticleForm() {
+      this.editArticleForm = {};
+      this.imageUrl = '';
+    },
   },
   created() {
-    this.handleCurrentChange(1);
+    /* this.handleCurrentChange(1);
     this.$http.get('/article').then((res) => {
       this.articleTableData = res.data.data;
-    });
+    }); */
   },
 };
 </script>
@@ -721,15 +827,15 @@ export default {
 }
 .editArticle {
   .avatar-uploader .avatar {
-    width: 500px;
-    height: 500px;
+    width: 200px;
+    height: 200px;
     display: block;
   }
   .el-icon.avatar-uploader-icon {
     font-size: 28px;
     color: #8c939d;
-    width: 500px;
-    height: 500px;
+    width: 200px;
+    height: 200px;
     text-align: center;
   }
 }

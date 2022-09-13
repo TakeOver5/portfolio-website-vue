@@ -35,6 +35,7 @@ export default createStore({
     },
     getUSESRNAME: (state) => state.USERNAME,
     setTOKEN: (state, token) => {
+      localStorage.setItem('Authorization', token);
       state.TOKEN = token;
     },
     getTOKEN: (state) => state.TOKEN,
