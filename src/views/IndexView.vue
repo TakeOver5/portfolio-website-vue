@@ -49,12 +49,13 @@
           <el-row :gutter="16">
             <el-col :span="8" :lg="8" :sm="12" :xs="24"
             v-for="item in articleList" :key="item.article_id">
-              <!-- 卡片 -->
+              <!-- index 的部分，卡片 -->
               <el-card :body-style="{ padding: '0px' }" @click="cardDetail(item)">
                 <img
-                  :src="item.cover"
+                  :src="item.cover_path"
                   class="image"
                   :alt="item.title"
+                  style="width: 400px; height: 380px;"
                 />
                 <div class="txt">
                   <h2>{{ item.title }}</h2>
@@ -67,7 +68,7 @@
           <!-- 分頁 -->
           <el-row class="pagination">
             <el-pagination background layout="prev, pager, next"
-            :total="7"
+            :total="articleTotal"
             :page-size="articlePageSize"
             @current-change="handleCurrentChange" />
           </el-row>
@@ -404,13 +405,18 @@ export default {
           },
         ],
       },
-      user: {},
+      user: {
+        authority: '',
+        name: '',
+        avatar: '',
+        email: '',
+        memberId: '',
+      },
       articleList: [],
-      articlePageSize: 3,
       cardDetaildialog: false,
       cardDetaildData: {},
       auth: '',
-      addArticleDialog: true,
+      addArticleDialog: false,
       manageDialog: false,
       memberTableData: [],
       articleTableData: [],
@@ -423,6 +429,14 @@ export default {
         cover: '',
         git_file_path: '',
       },
+      // 請求的筆數
+      limit: 12,
+      // 忽略的筆數
+      offset: 12,
+      // 文章的筆數
+      articleTotal: 0,
+      // 顯示的筆數
+      articlePageSize: 12,
     };
   },
   methods: {
@@ -441,6 +455,12 @@ export default {
               this.$store.commit('setUSERNAME', res.data.data.name);
               this.$store.commit('setAVATAR', res.data.data.avatar);
               this.$store.commit('setTOKEN', res.headers.authorization);
+              sessionStorage.setItem('Auth', res.data.data.authority);
+              sessionStorage.setItem('ID', res.data.data.memberId);
+              sessionStorage.setItem('EMAIL', res.data.data.email);
+              sessionStorage.setItem('USERNAME', res.data.data.name);
+              sessionStorage.setItem('AVATAR', res.data.data.avatar);
+              sessionStorage.setItem('TOKEN', res.headers.authorization);
               this.auth = res.data.data.authority;
               this.user = res.data.data;
               this.user.avatar = `data:image/jpeg;base64,${this.user.avatar}`;
@@ -479,6 +499,7 @@ export default {
           this.user = {};
           this.auth = '';
           localStorage.clear();
+          sessionStorage.clear();
           ElMessage({
             showClose: true,
             message: '登出成功',
@@ -512,21 +533,15 @@ export default {
         return false;
       });
     },
-    loadArticleList() {
-      this.$http.get('/article').then((res) => {
-        this.articleList = res.data.data;
-      });
-    },
     handleCurrentChange(val) {
-      this.$http.get('/article').then((res) => {
-        this.articleList = [];
-        const min = (val - 1) * this.articlePageSize;
-        const max = min + this.articlePageSize;
-        for (let i = min; i < max; i += 1) {
-          if (res.data.data[i]) {
-            this.articleList.push(res.data.data[i]);
-          }
-        }
+      console.log(val);
+      const offsetNum = this.offset * (val - 1);
+      const api = `${process.env.VUE_APP_API}articles?limit=${this.limit}&offset=${offsetNum}`;
+      this.$http.get(api).then((res) => {
+        this.articleTotal = res.data.total;
+        this.articleList = res.data.data;
+        // const min = (val - 1) * this.articlePageSize;
+        // const max = min + this.articlePageSize;
       });
     },
     cardDetail(item) {
@@ -591,11 +606,10 @@ export default {
           form.append('cover', this.editArticleForm.cover);
           form.append('git_file_path', this.editArticleForm.git_file_path);
           const api = `${process.env.VUE_APP_API}article`;
-          console.log(this.editArticleForm.cover);
           this.$http.post(api, form, {
             headers: {
               'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>',
-              authorization: localStorage.getItem('Authorization'),
+              authorization: sessionStorage.getItem('TOKEN'),
             },
           }).then((res) => {
             console.log(res);
@@ -610,7 +624,7 @@ export default {
             } else {
               ElMessage({
                 showClose: true,
-                message: '上傳失敗',
+                message: res.data.message,
                 type: 'error',
               });
             }
@@ -625,10 +639,22 @@ export default {
     },
   },
   created() {
-    /* this.handleCurrentChange(1);
-    this.$http.get('/article').then((res) => {
-      this.articleTableData = res.data.data;
-    }); */
+    this.handleCurrentChange(1);
+    console.log(sessionStorage.getItem('ID'));
+    if (sessionStorage.getItem('ID')) {
+      this.$store.commit('setAuth', sessionStorage.getItem('Auth'));
+      this.$store.commit('setID', sessionStorage.getItem('ID'));
+      this.$store.commit('setEMAIL', sessionStorage.getItem('EMAIL'));
+      this.$store.commit('setUSERNAME', sessionStorage.getItem('USERNAME'));
+      this.$store.commit('setAVATAR', sessionStorage.getItem('AVATAR'));
+      this.$store.commit('setTOKEN', sessionStorage.getItem('TOKEN'));
+      this.user.authority = this.$store.state.AUTH;
+      this.user.memberId = this.$store.state.ID;
+      this.user.email = this.$store.state.EMAIL;
+      this.user.name = this.$store.state.USERNAME;
+      this.user.avatar = `data:image/jpeg;base64,${this.$store.state.AVATAR}`;
+      this.auth = this.$store.state.AUTH;
+    }
   },
 };
 </script>
