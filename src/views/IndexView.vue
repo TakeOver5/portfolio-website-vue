@@ -260,7 +260,7 @@
   style="position: fixed; right: 40px; bottom: 140px;
   width: 80px; height: 80px;"
   @click="manageDialog = true"
-  v-if="auth==='admin'">
+  v-if="auth==='ROLE_admin'">
     <el-icon :size="50" :color="color">
         <User />
     </el-icon>
@@ -270,8 +270,8 @@
   <el-button type="warning" circle
   style="position: fixed; right: 40px; bottom: 240px;
   width: 80px; height: 80px;"
-  @click="manageDialog = true"
-  v-if="auth==='admin'">
+  @click="manageArticleAPI(1)"
+  v-if="auth==='ROLE_admin'">
     <el-icon :size="50" :color="color">
         <EditPen />
     </el-icon>
@@ -333,13 +333,88 @@
   </div>
   <!-- 文章編輯頁面結束 -->
   <!-- 管理員頁面 -->
+  <!-- 文章管理頁面 -->
+  <el-dialog v-model="manageArticleDialog"
+  width="80%" max-height="80%" title="文章管理"
+  :before-close="manageArticleDialogHandleClose">
+    <el-table :data="manageArticleData" border style="width: 100%;" stripe>
+      <el-table-column prop="articleId" label="文章ID" width="80" align="center" />
+      <el-table-column prop="title" label="文章標題" align="center">
+        <template #default="scope">
+          <div style="display: flex; align-items: center">
+            <el-icon><List /></el-icon>
+            <span style="margin-left: 8px">{{ scope.row.title }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="memberId" label="會員ID" width="80" align="center" />
+      <el-table-column label="頭像" width="70" align="center" >
+        <template #default="scope">
+          <el-avatar size="default" :src="`data:image/jpeg;base64,${scope.row.avatar}`"/>
+        </template>
+      </el-table-column>
+      <el-table-column prop="name" label="作者" width="180" align="center">
+        <template #default="scope">
+          <div style="display: flex; align-items: center">
+            <el-icon><UserFilled /></el-icon>
+            <span style="margin-left: 8px">{{ scope.row.name }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="email" label="信箱" width="180" align="center">
+        <template #default="scope">
+          <div style="display: flex; align-items: center">
+            <el-icon><Message /></el-icon>
+            <span style="margin-left: 8px">{{ scope.row.email }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="lastModifiedDate" label="最後修改日期" width="180" align="center">
+        <template #default="scope">
+          <div style="display: flex; align-items: center">
+            <el-icon><timer /></el-icon>
+            <span style="margin-left: 8px">{{ scope.row.lastModifiedDate }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="viewable" label="狀態" width="80" align="center" fixed="right">
+        <template #default="scope">
+          <el-popconfirm :title="`隱藏 ${scope.row.articleId} 號文章嗎？`"
+          @confirm="changeViewable(scope.$index, scope.row.articleId, scope.row.viewable)"
+          width="175px" v-if="scope.row.viewable">
+            <template #reference>
+              <el-button size="small"
+                type="success">顯示
+              </el-button>
+            </template>
+          </el-popconfirm>
+          <el-popconfirm :title="`顯示 ${scope.row.articleId} 號文章嗎？`"
+          @confirm="changeViewable(scope.$index, scope.row.articleId, scope.row.viewable)"
+          width="175px" v-else>
+            <template #reference>
+              <el-button size="small"
+                type="danger">隱藏
+              </el-button>
+            </template>
+          </el-popconfirm>
+      </template>
+      </el-table-column>
+    </el-table>
+    <div class="pagination">
+      <el-pagination background layout="prev, pager, next"
+      :total="articleManagerTotal"
+      :page-size="20"
+      @current-change="manageArticleAPI" />
+    </div>
+  </el-dialog>
+
   <el-dialog v-model="manageDialog"
-  width="80%" max-height="80%" title="文章管理">
+  width="80%" max-height="80%" title="會員管理">
     <el-table :data="articleTableData" border style="width: 720px">
-      <el-table-column prop="article_id" label="文章編號" width="180" />
+      <el-table-column prop="articleId" label="文章編號" width="180" />
       <el-table-column prop="title" label="文章標題" width="180" />
-      <el-table-column prop="member_id" label="作者" width="180" />
-      <el-table-column prop="last_modified_date" label="最後修改日期" width="180" />
+      <el-table-column prop="name" label="作者" width="180" />
+      <el-table-column prop="createdDate" label="最後修改日期" width="180" />
     </el-table>
   </el-dialog>
   <!-- 管理員頁面結束 -->
@@ -545,6 +620,8 @@ export default {
       articlePageSize: 12,
       pesronManageDialog: false,
       personManageData: {},
+      manageArticleDialog: false,
+      manageArticleData: [],
     };
   },
   methods: {
@@ -803,6 +880,57 @@ export default {
         this.cardDetaildialog = false;
         this.pesronManageDialog = true;
       });
+    },
+    manageArticleAPI(val) {
+      const offset = 20 * (val - 1);
+      const api = `${process.env.VUE_APP_API}articles/simple/?limit=20&offset=${offset}`;
+      console.log(api);
+      this.manageArticleDialog = true;
+      this.$http.get(api, {}, {
+        headers: {
+          authorization: sessionStorage.getItem('TOKEN'),
+        },
+      }).then((res) => {
+        this.manageArticleData = res.data.data;
+        this.articleManagerTotal = res.data.total;
+      }).catch(() => {
+        ElMessage({
+          showClose: true,
+          message: '登入過期，請重新登入',
+          type: 'error',
+        });
+      });
+    },
+    changeViewable(index, articleId, viewState) {
+      console.log(index);
+      console.log(articleId);
+      console.log(viewState);
+      const setView = viewState ? 0 : 1;
+      const api = `${process.env.VUE_APP_API}article/${articleId}/viewable?view=${setView}`;
+      this.$http.post(api, {}, {
+        headers: {
+          authorization: sessionStorage.getItem('TOKEN'),
+        },
+      }).then((res) => {
+        if (res.data.code === 200) {
+          this.manageArticleData[index].viewable = !viewState;
+          ElMessage({
+            showClose: true,
+            message: '修改成功',
+            type: 'success',
+          });
+        }
+      }).catch(() => {
+        ElMessage({
+          showClose: true,
+          message: '登入過期，請重新登入',
+          type: 'error',
+        });
+      });
+    },
+    manageArticleDialogHandleClose(done) {
+      this.handleCurrentChange(1);
+      done();
     },
   },
   created() {
@@ -1095,6 +1223,11 @@ export default {
     padding-top: 36px;
   }
 }
+
+.el-pagination {
+  text-align: center;
+}
+
 .editArticle {
   .avatar-uploader .avatar {
     width: 200px;
