@@ -490,10 +490,16 @@
   <el-dialog v-model="pesronManageDialog"
   align-center
   :top="0"
-  width="80%" title="個人中心">
+  width="80%" title="個人中心"
+  :before-close="pesronManageDialogHandleClose">
     <div class="personDataPage">
       <el-avatar shape="square" :size="200" fit="none"
-      :src="`data:image/jpeg;base64,${personManageData.avatar}`" />
+      :src="`data:image/jpeg;base64,${personManageData.avatar}`"/>
+      <p>
+        <el-button type="primary" v-if="personManageData.memberId == user.memberId"
+        @click="editPersonDialog = true; pesronManageDialog = false; editNameForm.name = user.name">
+        編輯資料</el-button>
+      </p>
       <p>{{personManageData.name}}</p>
       <p>聯絡信箱：{{personManageData.email}}</p>
       <p>加入時間：{{personManageData.createdDate}}</p>
@@ -519,6 +525,68 @@
     </div>
   </el-dialog>
   <!-- 個人頁面結束 -->
+  <!-- 編輯個人資料 -->
+  <el-dialog v-model="editPersonDialog"
+  align-center
+  :top="0"
+  width="440px" title="編輯個人資料">
+    <div class="personDataPage">
+      <p>頭像上傳後會馬上更新（200*200，且小於 64KB）</p>
+      <el-upload
+          class="avatar-uploader"
+          :show-file-list="false"
+          ref="upload"
+          :limit="1"
+          :on-remove="handleRemove"
+          :on-change="handleEditChange"
+          :before-upload="uploadAvatar"
+          accept=".png, .jpg"
+          action=""
+        >
+          <el-avatar shape="square" :size="200" fit="none" v-if="user.avatar"
+          :src="user.avatar" alt="" />
+          <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+        </el-upload>
+        <el-form
+        label-position="top"
+        label-width="100px"
+        :model="editNameForm"
+        ref="ruleNameForm"
+        :rules="NameRules"
+        >
+          <el-form-item label="更改暱稱" prop="name">
+            <el-input v-model="editNameForm.name" placeholder="輸入新名字"
+            show-word-limit maxlength="12" />
+          </el-form-item>
+          <el-button type="primary"
+              @click="leaveMessage">修改暱稱
+          </el-button>
+      </el-form>
+        <el-form
+        label-position="top"
+        label-width="100px"
+        :model="editPwForm"
+        ref="ruleeditPwForm"
+        :rules="editPwRules"
+        >
+          <el-form-item label="舊密碼" prop="oldPassword">
+            <el-input v-model="editPwForm.oldPassword" maxlength="16"
+            show-word-limit placeholder="請輸入密碼"/>
+          </el-form-item>
+          <el-form-item label="新密碼" prop="newPassword">
+            <el-input v-model="editPwForm.newPassword" maxlength="16"
+            show-word-limit placeholder="請輸入 8~16 英數混合的新密碼" />
+          </el-form-item>
+          <el-form-item label="確認新密碼" prop="checkPassword">
+            <el-input v-model="editPwForm.checkPassword" maxlength="16"
+            show-word-limit placeholder="請再次輸入新密碼" />
+          </el-form-item>
+          <el-button type="success"
+              @click="uploadPassword('ruleeditPwForm')">修改密碼
+          </el-button>
+      </el-form>
+    </div>
+  </el-dialog>
 
 </template>
 
@@ -543,6 +611,34 @@ export default {
       if (value === '') {
         callback(new Error('請再次輸入密碼'));
       } else if (value !== this.registerForm.password) {
+        callback(new Error('兩次輸入密碼不一致！'));
+      } else {
+        callback();
+      }
+    };
+    const validatePass3 = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('請輸入舊密碼'));
+      } else {
+        if (this.editPwForm.oldPassword !== '') {
+          this.$refs.ruleeditPwForm.validateField('oldPassword');
+        }
+        callback();
+      }
+    };
+    const validatePass4 = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('請輸入新密碼'));
+      } else if (value === this.editPwForm.oldPassword) {
+        callback(new Error('新舊密碼需要不一致！'));
+      } else {
+        callback();
+      }
+    };
+    const validatePass5 = (rule, value, callback) => {
+      if (value === '') {
+        callback(new Error('請再次輸入新密碼'));
+      } else if (value !== this.editPwForm.newPassword) {
         callback(new Error('兩次輸入密碼不一致！'));
       } else {
         callback();
@@ -597,6 +693,37 @@ export default {
         checkPassword: [
           {
             required: true, validator: validatePass2, trigger: 'change',
+          },
+        ],
+      },
+      editPwRules: {
+        oldPassword: [
+          {
+            required: true, message: '請輸入舊密碼', validator: validatePass3, trigger: 'blur',
+          },
+          {
+            pattern: /[a-zA-Z]/,
+            message: '密碼需字母開頭',
+          },
+          {
+            min: 8, max: 16, message: '長度在 8 ~ 16 個', trigger: 'change',
+          },
+        ],
+        newPassword: [
+          {
+            required: true, message: '請輸入新密碼', validator: validatePass4, trigger: 'blur',
+          },
+          {
+            pattern: /[a-zA-Z]/,
+            message: '密碼需字母開頭',
+          },
+          {
+            min: 8, max: 16, message: '長度在 8 ~ 16 個', trigger: 'change',
+          },
+        ],
+        checkPassword: [
+          {
+            required: true, validator: validatePass5, trigger: 'change',
           },
         ],
       },
@@ -696,6 +823,17 @@ export default {
         'ROLE_banner',
         'ROLE_user',
       ],
+      avatarUrl: '',
+      editPersonDialog: false,
+      editPwForm: {},
+      editNameForm: {
+        name: '',
+      },
+      ruleeditPwForm: {
+        oldPassword: '',
+        newPassword: '',
+        checkPassword: '',
+      },
     };
   },
   methods: {
@@ -810,6 +948,8 @@ export default {
         this.cardDetaildData.avatar = `data:image/jpeg;base64,${this.cardDetaildData.avatar}`;
         this.cardDetaildData.gitFilePathZip = `${this.cardDetaildData.gitFilePath}archive/refs/heads/master.zip`;
       });
+      console.log(this.cardDetailData);
+      console.log(this.user);
       this.pesronManageDialog = false;
       this.cardDetaildialog = true;
     },
@@ -851,6 +991,77 @@ export default {
             ElMessage.error('請上傳 500*500 圖片');
           } else {
             this.imageUrl = image.src;
+          }
+        };
+      };
+      return false;
+    },
+    // 上傳頭像
+    uploadAvatar(file) {
+      const isPng = /^.png$/.test(file.name.substring(file.name.lastIndexOf('.')));
+      const isJpg = /^.jpg$/.test(file.name.substring(file.name.lastIndexOf('.')));
+      // bit 位元、byte 位元組、KB
+      // 1Byte = 8Bits、1KB = 1024Bytes
+      const isLt100KB = file.size / 1024 < 64;
+      console.log(file.size);
+      if (!(isPng || isJpg)) {
+        ElMessage.error('上傳圖片只能是 PNG 或 JPG 格式');
+        return false;
+      }
+      if (!isLt100KB) {
+        console.log(file.size / 1024);
+        ElMessage.error('上傳圖片不能超過 64KB');
+        return false;
+      }
+
+      // 判斷圖片長寛
+      const reader = new FileReader();
+      // 使用 base-64 進行編碼，
+      reader.readAsDataURL(file);
+
+      // 檔案轉換完成後執行
+      reader.onload = (theFile) => {
+        console.log(theFile);
+        const image = new Image();
+        image.src = theFile.target.result;
+        // 圖片載入後要進行的操作
+        image.onload = () => {
+          const { width, height } = image;
+          if (width !== 200 || height !== 200) {
+            ElMessage.error('請上傳 200*200 圖片');
+          } else {
+            const form = new FormData();
+            form.append('file', file);
+            const api = `${process.env.VUE_APP_API}member/avatar`;
+            this.$http.post(api, form, {
+              headers: {
+                'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>',
+                authorization: sessionStorage.getItem('TOKEN'),
+              },
+            }).then((res) => {
+              if (res.data.code === 200) {
+                ElMessage({
+                  showClose: true,
+                  message: '替換成功',
+                  type: 'success',
+                });
+                this.user.avatar = image.src;
+                this.$store.commit('setAVATAR', image.src.split(',')[1]);
+                sessionStorage.setItem('AVATAR', image.src.split(',')[1]);
+              } else {
+                ElMessage({
+                  showClose: true,
+                  message: '替換失敗',
+                  type: 'success',
+                });
+              }
+            }).catch(() => {
+              ElMessage({
+                showClose: true,
+                message: '登入過期，請重新登入',
+                type: 'error',
+              });
+            });
           }
         };
       };
@@ -1052,6 +1263,50 @@ export default {
     manageArticleDialogHandleClose(done) {
       this.handleCurrentChange(1);
       done();
+    },
+    pesronManageDialogHandleClose(done) {
+      this.personManageData = {};
+      done();
+    },
+    // 更新密碼
+    uploadPassword(formName) {
+      this.$refs[formName].validate((valid) => {
+        console.log(this.editPwForm);
+        if (valid) {
+          const api = `${process.env.VUE_APP_API}member/changepw`;
+          this.$http.post(
+            api,
+            { ...this.editPwForm },
+            {
+              headers: {
+                authorization: sessionStorage.getItem('TOKEN'),
+              },
+            },
+          ).then((res) => {
+            if (res.data.code === 200) {
+              ElMessage({
+                showClose: true,
+                message: '修改成功',
+                type: 'success',
+              });
+              this.editPwForm = {};
+            } else {
+              ElMessage({
+                showClose: true,
+                message: res.data.message,
+                type: 'error',
+              });
+            }
+          }).catch(() => {
+            ElMessage({
+              showClose: true,
+              message: '登入過期，請重新登入',
+              type: 'error',
+            });
+          });
+        }
+        return false;
+      });
     },
   },
   created() {
