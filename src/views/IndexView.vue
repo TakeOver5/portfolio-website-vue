@@ -50,7 +50,7 @@
             <el-col :span="8" :lg="8" :sm="12" :xs="24"
             v-for="item in articleList" :key="item.article_id">
               <!-- index 的部分，卡片 -->
-              <el-card :body-style="{ padding: '0px' }" @click="cardDetail(item)">
+              <el-card :body-style="{ padding: '0px' }" @click="cardDetail(item.article_id)">
                 <img
                   :src="item.cover_path"
                   class="image"
@@ -156,38 +156,92 @@
         <h1>{{cardDetaildData.title}}</h1>
       </el-col>
       <el-col>
-        <div>
-          <p><el-avatar size="default" src="https://i.pravatar.cc/300" style="margin-right:8px;" />台灣阿成</p>
+        <div class="header-avatar">
+          <el-avatar size="default" :src="cardDetaildData.avatar" style="margin-right:8px;" />
+          <p>{{cardDetaildData.name}}</p>
         </div>
         <div>
-          <p>更新時間</p>
+          <p>文章創建時間：{{cardDetaildData.createdDate}}</p>
+          <p>最後修改時間：{{cardDetaildData.lastModifiedDate}}</p>
         </div>
       </el-col>
       <el-col>
-        <el-image :src="cardDetaildData.cover" fit="none" />
+        <h2>專題封面</h2>
+        <el-image :src="cardDetaildData.coverPath" fit="none" />
       </el-col>
       <el-col>
+        <h2>專題介紹</h2>
         <p>{{cardDetaildData.introduction}}</p>
       </el-col>
       <el-col>
+        <h2>專題內文</h2>
         <p>{{cardDetaildData.content}}</p>
       </el-col>
       <el-col>
-        <p v-if="cardDetaildData.file_download_path">{{cardDetaildData.file_download_path}}</p>
-        <el-empty v-else description="沒有檔案" />
-
+        <div class="header-avatar">
+          <el-button type="primary" v-if="cardDetaildData.gitFilePath">
+            <a href="#" :download="cardDetaildData.gitFilePathZip"
+            style="text-decoration:none;color:#fff;">
+              檔案下載<el-icon class="el-icon--right"><Download /></el-icon>
+            </a>
+          </el-button>
+          <el-empty v-else description="沒有檔案" />
+          <div style="margin-left:8px;">
+            <p>專題 GitHub 連結：<a :href="cardDetaildData.gitFilePath">
+              {{cardDetaildData.gitFilePath}}</a>
+            </p>
+          </div>
+        </div>
       </el-col>
-      <el-col>
-        <p>{{cardDetaildData.github_download_path}}</p>
+    </el-row>
+    <hr>
+    <el-row>
+      <el-col><h1>留言</h1></el-col>
+      <el-col v-if="cardDetaildData.messageDetail.length === 0"><p>目前沒有留言～</p></el-col>
+      <el-col v-for="message in cardDetaildData.messageDetail" :key="message.message_id">
+        <div class="header-avatar"
+        style="justify-content: left; margin-left:8px; width:100%;">
+          <el-avatar size="default" :src="`data:image/jpeg;base64,${message.avatar}`"
+          style="margin-right:8px;" />
+          <p>{{message.name}}</p>
+          <div class="header-avatar" style="width:80%; justify-content: space-between;">
+            <div style="margin-right:8px;"><p>：{{message.content}}</p></div>
+            <div style="width:150px;"><p>{{message.createdDate}}</p></div>
+          </div>
+        </div>
       </el-col>
     </el-row>
     <el-row>
-      <el-col v-for="message in cardDetaildData.message" :key="message.message_id">
-        <p>{{message.content}}</p>
+      <el-col v-if="checkId">
+        <el-form
+        label-position="top"
+        :model="messageForm"
+        ref="ruleMessageForm"
+        :rules="messageRules"
+        style="margin-top: 24px"
+        >
+          <el-form-item label="" prop="message">
+            <div class="header-avatar" style="width:100%; margin: 0 16px">
+              <el-input v-model="messageForm.message" placeholder="我要留言"
+                size="large"
+                style="margin-right:8px;"
+                show-word-limit
+                maxlength="80"
+                />
+              <el-button type="success"
+              @click="leaveMessage">留言
+              </el-button>
+            </div>
+          </el-form-item>
+        </el-form>
+      </el-col>
+      <el-col v-else>
+        <p>登入後即可留言~</p>
       </el-col>
     </el-row>
   </el-dialog>
   <!-- 卡片對話框結束 -->
+  <!-- 按鈕群組 -->
   <!-- 增加文章按鈕 -->
   <el-button type="primary" circle
   style="position: fixed; right: 40px; bottom: 40px;
@@ -414,7 +468,20 @@ export default {
       },
       articleList: [],
       cardDetaildialog: false,
-      cardDetaildData: {},
+      cardDetaildData: {
+        articleId: '',
+        name: '',
+        title: '',
+        introduction: '',
+        content: '',
+        coverPath: '',
+        createdDate: '',
+        lastModifiedDate: '',
+        gitFilePath: '',
+        avatar: '',
+        messageDetail: [],
+        gitFilePathZip: '',
+      },
       auth: '',
       addArticleDialog: false,
       manageDialog: false,
@@ -428,6 +495,9 @@ export default {
         content: '',
         cover: '',
         git_file_path: '',
+      },
+      messageForm: {
+        message: '',
       },
       // 請求的筆數
       limit: 12,
@@ -544,8 +614,13 @@ export default {
         // const max = min + this.articlePageSize;
       });
     },
-    cardDetail(item) {
-      this.cardDetaildData = item;
+    cardDetail(articleId) {
+      const api = `${process.env.VUE_APP_API}article/${articleId}`;
+      this.$http.get(api).then((res) => {
+        this.cardDetaildData = res.data.data;
+        this.cardDetaildData.avatar = `data:image/jpeg;base64,${this.cardDetaildData.avatar}`;
+        this.cardDetaildData.gitFilePathZip = `${this.cardDetaildData.gitFilePath}archive/refs/heads/master.zip`;
+      });
       this.cardDetaildialog = true;
     },
     // before-upload
@@ -628,6 +703,12 @@ export default {
                 type: 'error',
               });
             }
+          }).catch(() => {
+            ElMessage({
+              showClose: true,
+              message: '登入過期，請重新登入',
+              type: 'error',
+            });
           });
         }
         return false;
@@ -636,6 +717,46 @@ export default {
     deleteEditArticleForm() {
       this.editArticleForm = {};
       this.imageUrl = '';
+    },
+    leaveMessage() {
+      if (this.messageForm.message === '') {
+        ElMessage({
+          showClose: true,
+          message: '請輸入留言',
+          type: 'warning',
+        });
+        return;
+      }
+      // 等等要串接留言
+      const api = `${process.env.VUE_APP_API}article/${this.cardDetaildData.articleId}/message`;
+      console.log(api);
+      this.$http.post(api, { content: this.messageForm.message }, {
+        headers: {
+          authorization: sessionStorage.getItem('TOKEN'),
+        },
+      }).then((res) => {
+        if (res.data.code === 200) {
+          ElMessage({
+            showClose: true,
+            message: '留言成功',
+            type: 'success',
+          });
+          this.cardDetail(this.cardDetaildData.articleId);
+          this.messageForm.message = '';
+        } else {
+          ElMessage({
+            showClose: true,
+            message: res.data.message,
+            type: 'error',
+          });
+        }
+      }).catch(() => {
+        ElMessage({
+          showClose: true,
+          message: '登入過期，請重新登入',
+          type: 'error',
+        });
+      });
     },
   },
   created() {
@@ -655,6 +776,13 @@ export default {
       this.user.avatar = `data:image/jpeg;base64,${this.$store.state.AVATAR}`;
       this.auth = this.$store.state.AUTH;
     }
+  },
+  computed: {
+    checkId: {
+      get() {
+        return this.$store.state.ID;
+      },
+    },
   },
 };
 </script>
@@ -841,6 +969,12 @@ export default {
       font-size: 14px;
     }
   }
+}
+
+.header-avatar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .pagination {
