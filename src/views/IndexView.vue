@@ -1419,6 +1419,41 @@ export default {
         return false;
       });
     },
+    // 寄出信件
+    sendMail(formName) {
+      this.$refs[formName].validate((valid) => {
+        console.log(this.forgetPwForm);
+        if (valid) {
+          const api = `${process.env.VUE_APP_API}forgotpw`;
+          this.$http.post(
+            api,
+            { ...this.forgetPwForm },
+          ).then((res) => {
+            if (res.data.code === 200) {
+              ElMessage({
+                showClose: true,
+                message: '寄送成功',
+                type: 'success',
+              });
+            } else {
+              ElMessage({
+                showClose: true,
+                message: res.data.message,
+                type: 'error',
+              });
+            }
+            this.forgetPwForm.email = '';
+          }).catch((err) => {
+            ElMessage({
+              showClose: true,
+              message: err,
+              type: 'error',
+            });
+            this.forgetPwForm.email = '';
+          });
+        }
+      });
+    },
   },
   created() {
     this.handleCurrentChange(1);
