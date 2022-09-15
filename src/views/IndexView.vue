@@ -20,7 +20,7 @@
                 <el-menu-item index="2" v-if="!user.memberId" @click="registerDialog = true">
                   註冊
                 </el-menu-item>
-                <el-menu-item index="3" v-if="user.memberId">
+                <el-menu-item index="3" v-if="user.memberId" @click="pesronManage(user.memberId)">
                   <el-avatar  size="default" :src="user.avatar" style="margin-right:8px;" />
                   {{user.name}}
                 </el-menu-item>
@@ -155,11 +155,14 @@
       <el-col>
         <h1>{{cardDetaildData.title}}</h1>
       </el-col>
-      <el-col>
-        <div class="header-avatar">
-          <el-avatar size="default" :src="cardDetaildData.avatar" style="margin-right:8px;" />
+      <el-col @click="pesronManage(cardDetaildData.memberId)">
+        <div class="header-avatar-highlight">
+          <el-avatar size="default" :src="cardDetaildData.avatar" style="margin-right:8px;"
+          alt="點我查看更多" />
           <p>{{cardDetaildData.name}}</p>
         </div>
+      </el-col>
+      <el-col>
         <div>
           <p>文章創建時間：{{cardDetaildData.createdDate}}</p>
           <p>最後修改時間：{{cardDetaildData.lastModifiedDate}}</p>
@@ -340,6 +343,39 @@
     </el-table>
   </el-dialog>
   <!-- 管理員頁面結束 -->
+  <!-- 個人頁面 -->
+  <el-dialog v-model="pesronManageDialog"
+  align-center
+  :top="0"
+  width="80%" title="個人中心">
+    <div class="personDataPage">
+      <el-avatar shape="square" :size="200" fit="none"
+      :src="`data:image/jpeg;base64,${personManageData.avatar}`" />
+      <p>{{personManageData.name}}</p>
+      <p>聯絡信箱：{{personManageData.email}}</p>
+      <p>加入時間：{{personManageData.createdDate}}</p>
+      <h1>我的作品</h1>
+      <el-carousel :interval="4000" height="380px" :initial-index="0" indicator-position="outside">
+        <el-carousel-item v-for="item in personManageData.articles"
+        :key="item.article_id">
+          <el-card :body-style="{ padding: '0px' }"
+          @click="cardDetail(item.article_id)">
+            <img
+              :src="item.cover_path"
+              class="card-image"
+              :alt="item.title"
+              style="width: 500px; height: 380px;"
+            />
+            <div class="txt">
+              <h2>{{ item.title }}</h2>
+              <p>{{ item.introduction }}</p>
+            </div>
+          </el-card>
+        </el-carousel-item>
+      </el-carousel>
+    </div>
+  </el-dialog>
+  <!-- 個人頁面結束 -->
 
 </template>
 
@@ -507,6 +543,8 @@ export default {
       articleTotal: 0,
       // 顯示的筆數
       articlePageSize: 12,
+      pesronManageDialog: false,
+      personManageData: {},
     };
   },
   methods: {
@@ -621,6 +659,7 @@ export default {
         this.cardDetaildData.avatar = `data:image/jpeg;base64,${this.cardDetaildData.avatar}`;
         this.cardDetaildData.gitFilePathZip = `${this.cardDetaildData.gitFilePath}archive/refs/heads/master.zip`;
       });
+      this.pesronManageDialog = false;
       this.cardDetaildialog = true;
     },
     // before-upload
@@ -727,9 +766,7 @@ export default {
         });
         return;
       }
-      // 等等要串接留言
       const api = `${process.env.VUE_APP_API}article/${this.cardDetaildData.articleId}/message`;
-      console.log(api);
       this.$http.post(api, { content: this.messageForm.message }, {
         headers: {
           authorization: sessionStorage.getItem('TOKEN'),
@@ -756,6 +793,15 @@ export default {
           message: '登入過期，請重新登入',
           type: 'error',
         });
+      });
+    },
+    pesronManage(memberId) {
+      const api = `${process.env.VUE_APP_API}member/${memberId}/info`;
+      this.$http.get(api).then((res) => {
+        this.personManageData = res.data.data;
+        console.log(this.personManageData);
+        this.cardDetaildialog = false;
+        this.pesronManageDialog = true;
       });
     },
   },
@@ -951,6 +997,59 @@ export default {
   }
 }
 
+.el-carousel {
+  .el-card {
+    cursor: pointer;
+    height: auto;
+    --el-card-bg-color: transparent;
+    font-size: 0;
+    border: none;
+    .card-image {
+      vertical-align: middle;
+      position: relative;
+    }
+    .txt {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 40px;
+      background-color: rgba(0, 0, 0, .6);
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity .5s;
+      h2 {
+        font-size: 24px;
+        color: #ff0;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+      }
+      p {
+        font-size: 18px;
+        color: #fff;
+        font-weight: 100;
+        text-align: center;
+        line-height: 1.6;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+      }
+    }
+  }
+  .el-card:hover .txt {
+    opacity: 1;
+  }
+}
+
 .footer {
   margin-top: 32px;
   background-color: transparent;
@@ -977,6 +1076,17 @@ export default {
   align-items: center;
 }
 
+.header-avatar-highlight {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  :hover {
+    color: rgb(36, 16, 216);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}
+
 .pagination {
   padding: 0 auto;
   .el-pagination {
@@ -998,6 +1108,10 @@ export default {
     height: 200px;
     text-align: center;
   }
+}
+
+.el-carousel__item {
+  background-color:transparent;
 }
 
 @media (max-width: 575.99px) {  }
