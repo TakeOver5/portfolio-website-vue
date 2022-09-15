@@ -101,7 +101,8 @@
         </el-form-item>
         <el-form-item>
           <div style="width: 100%">
-              <a href="#" style="float: right; padding: 4px; margin-top: -16px;">忘記密碼</a>
+              <a href="#" style="float: right; padding: 4px; margin-top: -16px;"
+              @click="sendMailDialog=true; loginDialog=false;">忘記密碼</a>
           </div>
         </el-form-item>
         <el-form-item>
@@ -167,6 +168,18 @@
           <p>文章創建時間：{{cardDetaildData.createdDate}}</p>
           <p>最後修改時間：{{cardDetaildData.lastModifiedDate}}</p>
         </div>
+      </el-col>
+      <el-col>
+        <el-popconfirm :title="`確定刪除文章嗎？`"
+        @confirm="changeViewable()"
+        width="175px"
+        v-if="user.memberId == cardDetaildData.memberId">
+          <template #reference>
+            <el-button
+              type="danger">刪除文章
+            </el-button>
+          </template>
+        </el-popconfirm>
       </el-col>
       <el-col>
         <h2>專題封面</h2>
@@ -551,15 +564,15 @@
         label-position="top"
         label-width="100px"
         :model="editNameForm"
-        ref="ruleNameForm"
-        :rules="NameRules"
+        ref="ruleEditNameForm"
+        :rules="editNameRules"
         >
           <el-form-item label="更改暱稱" prop="name">
             <el-input v-model="editNameForm.name" placeholder="輸入新名字"
             show-word-limit maxlength="12" />
           </el-form-item>
           <el-button type="primary"
-              @click="leaveMessage">修改暱稱
+              @click="uploadName('ruleEditNameForm')">修改暱稱
           </el-button>
       </el-form>
         <el-form
@@ -583,6 +596,29 @@
           </el-form-item>
           <el-button type="success"
               @click="uploadPassword('ruleeditPwForm')">修改密碼
+          </el-button>
+      </el-form>
+    </div>
+  </el-dialog>
+  <!-- 忘記密碼 -->
+  <el-dialog v-model="sendMailDialog"
+  align-center
+  :top="0"
+  width="440px" title="找回密碼">
+    <div class="personDataPage">
+        <el-form
+        label-position="top"
+        label-width="100px"
+        :model="forgetPwForm"
+        ref="ruleforgetPwForm"
+        :rules="forgetPwRules"
+        >
+          <el-form-item label="輸入信箱" prop="email">
+            <el-input v-model="forgetPwForm.email" placeholder="輸入信箱"
+            show-word-limit maxlength="64" />
+          </el-form-item>
+          <el-button type="primary"
+              @click="sendMail('ruleforgetPwForm')">找回密碼
           </el-button>
       </el-form>
     </div>
@@ -644,11 +680,38 @@ export default {
         callback();
       }
     };
+    const validatePass6 = (rule, value, callback) => {
+      if (value === this.user.name) {
+        callback(new Error('您輸的暱稱與現在的一樣！'));
+      } else {
+        callback();
+      }
+    };
     return {
       loginDialog: false,
       registerDialog: false,
       loginForm: {},
       registerForm: {},
+      forgetPwRules: {
+        email: [
+          {
+            type: 'email', required: true, message: '請輸入電子信箱', trigger: 'blur',
+          },
+        ],
+      },
+      editNameRules: {
+        name: [
+          {
+            required: true, message: '請輸入暱稱', trigger: 'blur',
+          },
+          {
+            max: 12, message: '暱稱最多12個字元', trigger: 'change',
+          },
+          {
+            required: true, message: '您輸的暱稱與現在的一樣！', validator: validatePass6, trigger: 'blur',
+          },
+        ],
+      },
       loginRules: {
         username: [
           {
@@ -833,6 +896,12 @@ export default {
         oldPassword: '',
         newPassword: '',
         checkPassword: '',
+      },
+      ruleEditNameForm: {
+        name: '',
+      },
+      forgetPwForm: {
+        email: '',
       },
     };
   },
@@ -1290,6 +1359,48 @@ export default {
                 type: 'success',
               });
               this.editPwForm = {};
+            } else {
+              ElMessage({
+                showClose: true,
+                message: res.data.message,
+                type: 'error',
+              });
+            }
+          }).catch(() => {
+            ElMessage({
+              showClose: true,
+              message: '登入過期，請重新登入',
+              type: 'error',
+            });
+          });
+        }
+        return false;
+      });
+    },
+    // 更新暱稱
+    uploadName(formName) {
+      this.$refs[formName].validate((valid) => {
+        console.log(this.editNameForm);
+        if (valid) {
+          const api = `${process.env.VUE_APP_API}member/changename`;
+          this.$http.post(
+            api,
+            { ...this.editNameForm },
+            {
+              headers: {
+                authorization: sessionStorage.getItem('TOKEN'),
+              },
+            },
+          ).then((res) => {
+            if (res.data.code === 200) {
+              ElMessage({
+                showClose: true,
+                message: '修改成功',
+                type: 'success',
+              });
+              this.user.name = this.editNameForm.name;
+              this.$store.commit('setUSERNAME', this.editNameForm.name);
+              sessionStorage.setItem('USERNAME', this.editNameForm.name);
             } else {
               ElMessage({
                 showClose: true,
