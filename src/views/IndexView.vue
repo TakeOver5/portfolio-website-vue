@@ -259,7 +259,7 @@
   <el-button type="danger" circle
   style="position: fixed; right: 40px; bottom: 140px;
   width: 80px; height: 80px;"
-  @click="manageDialog = true"
+  @click="manageMemberAPI(1)"
   v-if="auth==='ROLE_admin'">
     <el-icon :size="50" :color="color">
         <User />
@@ -339,7 +339,7 @@
   :before-close="manageArticleDialogHandleClose">
     <el-table :data="manageArticleData" border style="width: 100%;" stripe>
       <el-table-column prop="articleId" label="文章ID" width="80" align="center" />
-      <el-table-column prop="title" label="文章標題" align="center">
+      <el-table-column prop="title" label="文章標題" align="center" width="500">
         <template #default="scope">
           <div style="display: flex; align-items: center">
             <el-icon><List /></el-icon>
@@ -350,8 +350,9 @@
       <el-table-column prop="memberId" label="會員ID" width="80" align="center" />
       <el-table-column label="頭像" width="70" align="center" >
         <template #default="scope">
-          <el-avatar size="default" :src="`data:image/jpeg;base64,${scope.row.avatar}`"/>
-        </template>
+          <el-avatar v-if="scope.row.avatar" size="default"
+          :src="`data:image/jpeg;base64,${scope.row.avatar}`"/>
+          <el-avatar v-else>user</el-avatar>        </template>
       </el-table-column>
       <el-table-column prop="name" label="作者" width="180" align="center">
         <template #default="scope">
@@ -377,7 +378,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="viewable" label="狀態" width="80" align="center" fixed="right">
+      <el-table-column prop="viewable" label="狀態" align="center" fixed="right">
         <template #default="scope">
           <el-popconfirm :title="`隱藏 ${scope.row.articleId} 號文章嗎？`"
           @confirm="changeViewable(scope.$index, scope.row.articleId, scope.row.viewable)"
@@ -397,7 +398,7 @@
               </el-button>
             </template>
           </el-popconfirm>
-      </template>
+        </template>
       </el-table-column>
     </el-table>
     <div class="pagination">
@@ -408,14 +409,81 @@
     </div>
   </el-dialog>
 
-  <el-dialog v-model="manageDialog"
+  <!-- 會員管理 -->
+  <el-dialog v-model="manageMemberDialog"
   width="80%" max-height="80%" title="會員管理">
-    <el-table :data="articleTableData" border style="width: 720px">
-      <el-table-column prop="articleId" label="文章編號" width="180" />
-      <el-table-column prop="title" label="文章標題" width="180" />
-      <el-table-column prop="name" label="作者" width="180" />
-      <el-table-column prop="createdDate" label="最後修改日期" width="180" />
+    <el-table :data="manageMemberData" border style="width: 100%;" stripe>
+      <el-table-column prop="memberId" label="會員編號" width="100" align="center" />
+      <el-table-column label="頭像" width="70" align="center" >
+        <template #default="scope">
+          <el-avatar v-if="scope.row.avatar" size="default"
+          :src="`data:image/jpeg;base64,${scope.row.avatar}`"/>
+          <el-avatar v-else>user</el-avatar>
+        </template>
+      </el-table-column>
+      <el-table-column prop="name" label="作者" width="180" align="center">
+        <template #default="scope">
+          <div style="display: flex; align-items: center">
+            <el-icon><UserFilled /></el-icon>
+            <span style="margin-left: 8px">{{ scope.row.name }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="email" label="信箱" align="center" width="500">
+        <template #default="scope">
+          <div style="display: flex; align-items: center">
+            <el-icon><Message /></el-icon>
+            <span style="margin-left: 8px">{{ scope.row.email }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createdDate" label="加入日期" align="center" width="500">
+        <template #default="scope">
+          <div style="display: flex; align-items: center">
+            <el-icon><timer /></el-icon>
+            <span style="margin-left: 8px">{{ scope.row.createdDate }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="auth" label="狀態" align="center" fixed="right">
+        <template #default="scope">
+          <el-popconfirm :title="`禁言 ${scope.row.memberId} 號會員嗎？`"
+          @confirm="changeAuth(scope.$index, scope.row.memberId, scope.row.auth)"
+          width="175px" v-if="scope.row.auth  === 'ROLE_user'">
+            <template #reference>
+              <el-button size="small"
+                type="success">正常
+              </el-button>
+            </template>
+          </el-popconfirm>
+          <el-popconfirm :title="`解禁 ${scope.row.memberId} 號會員嗎？`"
+          @confirm="changeAuth(scope.$index, scope.row.memberId, scope.row.auth)"
+          width="175px" v-else-if="scope.row.auth === 'ROLE_banner'">
+            <template #reference>
+              <el-button size="small"
+                type="danger">禁言
+              </el-button>
+            </template>
+          </el-popconfirm>
+          <el-popconfirm :title="`禁言 ${scope.row.memberId} 號會員嗎？`"
+          @confirm="changeAuth(scope.$index, scope.row.memberId, scope.row.auth)"
+          width="175px" v-else>
+            <template #reference>
+              <el-button size="small"
+                disabled
+                type="info">管理員
+              </el-button>
+            </template>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
     </el-table>
+    <div class="pagination">
+      <el-pagination background layout="prev, pager, next"
+      :total="memberManagerTotal"
+      :page-size="20"
+      @current-change="manageMemberAPI" />
+    </div>
   </el-dialog>
   <!-- 管理員頁面結束 -->
   <!-- 個人頁面 -->
@@ -595,7 +663,6 @@ export default {
       },
       auth: '',
       addArticleDialog: false,
-      manageDialog: false,
       memberTableData: [],
       articleTableData: [],
       param: {},
@@ -622,6 +689,13 @@ export default {
       personManageData: {},
       manageArticleDialog: false,
       manageArticleData: [],
+      manageMemberDialog: false,
+      manageMemberData: [],
+      memberManagerTotal: 0,
+      memberAuthList: [
+        'ROLE_banner',
+        'ROLE_user',
+      ],
     };
   },
   methods: {
@@ -886,13 +960,33 @@ export default {
       const api = `${process.env.VUE_APP_API}articles/simple/?limit=20&offset=${offset}`;
       console.log(api);
       this.manageArticleDialog = true;
-      this.$http.get(api, {}, {
+      this.$http.get(api, {
         headers: {
           authorization: sessionStorage.getItem('TOKEN'),
         },
       }).then((res) => {
         this.manageArticleData = res.data.data;
         this.articleManagerTotal = res.data.total;
+      }).catch(() => {
+        ElMessage({
+          showClose: true,
+          message: '登入過期，請重新登入',
+          type: 'error',
+        });
+      });
+    },
+    manageMemberAPI(val) {
+      const offset = 20 * (val - 1);
+      const api = `${process.env.VUE_APP_API}members?limit=20&offset=${offset}`;
+      console.log(api);
+      this.manageMemberDialog = true;
+      this.$http.get(api, {
+        headers: {
+          authorization: sessionStorage.getItem('TOKEN'),
+        },
+      }).then((res) => {
+        this.manageMemberData = res.data.data;
+        this.memberManagerTotal = res.data.total;
       }).catch(() => {
         ElMessage({
           showClose: true,
@@ -914,6 +1008,33 @@ export default {
       }).then((res) => {
         if (res.data.code === 200) {
           this.manageArticleData[index].viewable = !viewState;
+          ElMessage({
+            showClose: true,
+            message: '修改成功',
+            type: 'success',
+          });
+        }
+      }).catch(() => {
+        ElMessage({
+          showClose: true,
+          message: '登入過期，請重新登入',
+          type: 'error',
+        });
+      });
+    },
+    changeAuth(index, memberId, authState) {
+      console.log(index);
+      console.log(memberId);
+      console.log(authState);
+      const setAuth = authState === 'ROLE_user' ? 0 : 1;
+      const api = `${process.env.VUE_APP_API}member/${memberId}/auth?auth=${setAuth}`;
+      this.$http.post(api, {}, {
+        headers: {
+          authorization: sessionStorage.getItem('TOKEN'),
+        },
+      }).then((res) => {
+        if (res.data.code === 200) {
+          this.manageMemberData[index].auth = this.memberAuthList[setAuth];
           ElMessage({
             showClose: true,
             message: '修改成功',
