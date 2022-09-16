@@ -171,7 +171,7 @@
       </el-col>
       <el-col>
         <el-popconfirm :title="`確定刪除文章嗎？`"
-        @confirm="changeViewable()"
+        @confirm="deleteArticle(cardDetaildData.articleId)"
         width="175px"
         v-if="user.memberId == cardDetaildData.memberId">
           <template #reference>
@@ -1452,6 +1452,40 @@ export default {
             this.forgetPwForm.email = '';
           });
         }
+      });
+    },
+    // 刪除文章，還沒搞定
+    deleteArticle(articleId) {
+      const api = `${process.env.VUE_APP_API}article/${articleId}`;
+      this.$http.delete(
+        api,
+        {
+          headers: {
+            authorization: sessionStorage.getItem('TOKEN'),
+          },
+        },
+      ).then((res) => {
+        if (res.data.code === 200) {
+          ElMessage({
+            showClose: true,
+            message: '刪除成功',
+            type: 'success',
+          });
+          this.cardDetaildialog = false;
+          this.handleCurrentChange(1);
+        } else {
+          ElMessage({
+            showClose: true,
+            message: res.data.message,
+            type: 'error',
+          });
+        }
+      }).catch((err) => {
+        ElMessage({
+          showClose: true,
+          message: err,
+          type: 'error',
+        });
       });
     },
   },
