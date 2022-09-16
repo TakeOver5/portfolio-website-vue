@@ -228,7 +228,7 @@
       </el-col>
     </el-row>
     <el-row>
-      <el-col v-if="checkId">
+      <el-col v-if="checkAuth === 'ROLE_user' || checkAuth === 'ROLE_admin'">
         <el-form
         label-position="top"
         :model="messageForm"
@@ -251,6 +251,30 @@
           </el-form-item>
         </el-form>
       </el-col>
+      <el-col v-else-if="checkAuth === 'ROLE_banner'">
+        <el-form
+        label-position="top"
+        :model="messageForm"
+        ref="ruleMessageForm"
+        :rules="messageRules"
+        style="margin-top: 24px"
+        >
+          <el-form-item label="" prop="message">
+            <div class="header-avatar" style="width:100%; margin: 0 16px">
+              <el-input v-model="messageForm.message" placeholder="你違反數位中介法，暫時無法留言"
+                size="large"
+                style="margin-right:8px;"
+                show-word-limit
+                maxlength="80"
+                disabled
+                />
+              <el-button type="danger" disabled
+              @click="leaveMessage">留言
+              </el-button>
+            </div>
+          </el-form-item>
+        </el-form>
+      </el-col>
       <el-col v-else>
         <p>登入後即可留言~</p>
       </el-col>
@@ -263,7 +287,7 @@
   style="position: fixed; right: 40px; bottom: 40px;
   width: 80px; height: 80px;"
   @click="addArticleDialog = true"
-  v-if="auth">
+  v-if="auth==='ROLE_admin' || auth==='ROLE_user'">
     <el-icon :size="50" :color="color">
         <CirclePlusFilled />
     </el-icon>
@@ -517,7 +541,8 @@
       <p>聯絡信箱：{{personManageData.email}}</p>
       <p>加入時間：{{personManageData.createdDate}}</p>
       <h1>我的作品</h1>
-      <el-carousel :interval="4000" height="380px" :initial-index="0" indicator-position="outside">
+      <el-carousel :interval="4000" height="380px" :initial-index="0" indicator-position="outside"
+      v-if="personManageArticleNum > 0">
         <el-carousel-item v-for="item in personManageData.articles"
         :key="item.article_id">
           <el-card :body-style="{ padding: '0px' }"
@@ -535,6 +560,7 @@
           </el-card>
         </el-carousel-item>
       </el-carousel>
+      <el-empty v-else description="空空如也" />
     </div>
   </el-dialog>
   <!-- 個人頁面結束 -->
@@ -690,7 +716,10 @@ export default {
     return {
       loginDialog: false,
       registerDialog: false,
-      loginForm: {},
+      loginForm: {
+        username: '',
+        password: '',
+      },
       registerForm: {},
       forgetPwRules: {
         email: [
@@ -903,6 +932,7 @@ export default {
       forgetPwForm: {
         email: '',
       },
+      personManageArticleNum: 0,
     };
   },
   methods: {
@@ -930,11 +960,21 @@ export default {
               this.auth = res.data.data.authority;
               this.user = res.data.data;
               this.user.avatar = `data:image/jpeg;base64,${this.user.avatar}`;
+              this.loginForm.username = '';
+              this.loginForm.password = '';
               ElMessage({
                 showClose: true,
                 message: '登入成功',
                 type: 'success',
               });
+              if (this.auth === 'ROLE_banner') {
+                ElMessage({
+                  showClose: true,
+                  duration: 10000,
+                  message: '你已違法數位中介法，現在無法發文或留言',
+                  type: 'error',
+                });
+              }
               this.loginDialog = false;
             } else {
               this.loginForm.password = '';
@@ -1231,6 +1271,7 @@ export default {
       this.$http.get(api).then((res) => {
         this.personManageData = res.data.data;
         console.log(this.personManageData);
+        this.personManageArticleNum = this.personManageData.articles.length;
         this.cardDetaildialog = false;
         this.pesronManageDialog = true;
       });
@@ -1511,6 +1552,11 @@ export default {
     checkId: {
       get() {
         return this.$store.state.ID;
+      },
+    },
+    checkAuth: {
+      get() {
+        return this.$store.state.AUTH;
       },
     },
   },
