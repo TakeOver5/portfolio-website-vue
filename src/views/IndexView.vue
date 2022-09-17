@@ -21,7 +21,10 @@
                   註冊
                 </el-menu-item>
                 <el-menu-item index="3" v-if="user.memberId" @click="pesronManage(user.memberId)">
-                  <el-avatar  size="default" :src="user.avatar" style="margin-right:8px;" />
+                  <el-avatar v-if="user.avatar != `data:image/jpeg;base64,null`"
+                  size="default" :src="user.avatar"
+                  style="margin-right:8px;" />
+                  <el-avatar v-else size="default" style="margin-right:8px;">user</el-avatar>
                   {{user.name}}
                 </el-menu-item>
                 <el-menu-item index="4" v-if="user.memberId" @click="logout">退出</el-menu-item>
@@ -318,7 +321,9 @@
   <div class="editArticle">
     <el-dialog v-model="addArticleDialog" title="新增文章"
     max-width="1000px" width="80%"
-    align-center>
+    align-center
+    append-to-body
+    >
       <el-form
         label-width="200px"
         style="max-width: 100%"
@@ -326,6 +331,7 @@
         :model="editArticleForm"
         ref="ruleEditArticleForm"
         :rules="editArticleRules"
+        :append-to-body="false"
       >
         <el-form-item label="標題" prop="title" >
           <el-input placeholder="請輸入專題標題" v-model="editArticleForm.title" />
@@ -388,7 +394,8 @@
         <template #default="scope">
           <el-avatar v-if="scope.row.avatar" size="default"
           :src="`data:image/jpeg;base64,${scope.row.avatar}`"/>
-          <el-avatar v-else>user</el-avatar>        </template>
+          <el-avatar v-else>user</el-avatar>
+        </template>
       </el-table-column>
       <el-table-column prop="name" label="作者" width="180" align="center">
         <template #default="scope">
@@ -530,7 +537,9 @@
   :before-close="pesronManageDialogHandleClose">
     <div class="personDataPage">
       <el-avatar shape="square" :size="200" fit="none"
-      :src="`data:image/jpeg;base64,${personManageData.avatar}`"/>
+      :src="`data:image/jpeg;base64,${personManageData.avatar}`"
+      v-if="personManageData.avatar" />
+      <el-avatar v-else :size="200" shape="square">尚未設置頭像</el-avatar>
       <p>
         <el-button type="primary" v-if="personManageData.memberId == user.memberId"
         @click="editPersonDialog = true; pesronManageDialog = false; editNameForm.name = user.name">
@@ -608,15 +617,15 @@
         :rules="editPwRules"
         >
           <el-form-item label="舊密碼" prop="oldPassword">
-            <el-input v-model="editPwForm.oldPassword" maxlength="16"
+            <el-input v-model="editPwForm.oldPassword" maxlength="16" type="password"
             show-word-limit placeholder="請輸入密碼"/>
           </el-form-item>
           <el-form-item label="新密碼" prop="newPassword">
-            <el-input v-model="editPwForm.newPassword" maxlength="16"
+            <el-input v-model="editPwForm.newPassword" maxlength="16" type="password"
             show-word-limit placeholder="請輸入 8~16 英數混合的新密碼" />
           </el-form-item>
           <el-form-item label="確認新密碼" prop="checkPassword">
-            <el-input v-model="editPwForm.checkPassword" maxlength="16"
+            <el-input v-model="editPwForm.checkPassword" maxlength="16" type="password"
             show-word-limit placeholder="請再次輸入新密碼" />
           </el-form-item>
           <el-button type="success"
@@ -643,7 +652,7 @@
             show-word-limit maxlength="64" />
           </el-form-item>
           <el-button type="primary"
-              @click="sendMail('ruleforgetPwForm')">找回密碼
+              @click="sendMail('ruleforgetPwForm')" :disabled="sendMailBtn">找回密碼
           </el-button>
       </el-form>
     </div>
@@ -763,6 +772,7 @@ export default {
         branding: false,
         images_file_types: 'jpg,png',
         file_picker_types: 'image',
+        object_resizing: true,
       },
       editorValue: this.value,
       loginDialog: false,
@@ -976,6 +986,8 @@ export default {
         email: '',
       },
       personManageArticleNum: 0,
+      sendMailBtn: false,
+      sendMailDialog: false,
     };
   },
   methods: {
@@ -1249,7 +1261,9 @@ export default {
                 type: 'success',
               });
               this.deleteEditArticleForm();
+              this.editorValue = '';
               this.addArticleDialog = false;
+              this.handleCurrentChange(1);
             } else {
               ElMessage({
                 showClose: true,
@@ -1509,6 +1523,7 @@ export default {
       this.$refs[formName].validate((valid) => {
         console.log(this.forgetPwForm);
         if (valid) {
+          this.sendMailBtn = true;
           const api = `${process.env.VUE_APP_API}forgotpw`;
           this.$http.post(
             api,
@@ -1520,6 +1535,7 @@ export default {
                 message: '寄送成功',
                 type: 'success',
               });
+              this.sendMailDialog = false;
             } else {
               ElMessage({
                 showClose: true,
@@ -1527,6 +1543,8 @@ export default {
                 type: 'error',
               });
             }
+            this.sendMailBtn = false;
+            this.sendMailDialog = false;
             this.forgetPwForm.email = '';
           }).catch((err) => {
             ElMessage({
@@ -1535,6 +1553,7 @@ export default {
               type: 'error',
             });
             this.forgetPwForm.email = '';
+            this.sendMailBtn = false;
           });
         }
       });
@@ -1590,6 +1609,12 @@ export default {
       this.user.avatar = `data:image/jpeg;base64,${this.$store.state.AVATAR}`;
       this.auth = this.$store.state.AUTH;
     }
+    document.addEventListener('focusin', (e) => {
+      const closest = e.target.closest('.tox-tinymce-aux, .tox-dialog, .moxman-window, .tam-assetmanager-root');
+      if (closest !== null && closest !== undefined) {
+        e.stopImmediatePropagation();
+      }
+    });
   },
   mounted() {
     tinymce.init({});
