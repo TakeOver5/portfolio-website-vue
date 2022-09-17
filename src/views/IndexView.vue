@@ -191,10 +191,10 @@
       </el-col>
       <el-col>
         <h2>專題內文</h2>
-        <p>{{cardDetaildData.content}}</p>
+        <div v-html="cardDetaildData.content"></div>
       </el-col>
       <el-col>
-        <div class="header-avatar">
+        <div class="header-avatar" style="margin-top:16px;">
           <el-button type="primary" v-if="cardDetaildData.gitFilePath">
             <a href="#" :download="cardDetaildData.gitFilePathZip"
             style="text-decoration:none;color:#fff;">
@@ -321,7 +321,7 @@
     align-center>
       <el-form
         label-width="200px"
-        style="max-width: 460px"
+        style="max-width: 100%"
         label-position="top"
         :model="editArticleForm"
         ref="ruleEditArticleForm"
@@ -333,11 +333,10 @@
         <el-form-item label="介紹" prop="introduction" >
           <el-input placeholder="請在 80 個字內簡短的介紹專題" v-model="editArticleForm.introduction" />
         </el-form-item>
-        <el-form-item label="內文" prop="content" >
-          <el-input placeholder="請輸入內文"
-          type="textarea"
-          :autosize="{ minRows: 5}"
-          v-model="editArticleForm.content" />
+        <el-form-item label="內文">
+          <div class="editor" style="width: 100%">
+            <editor v-model="editorValue" :init="init"></editor>
+          </div>
         </el-form-item>
         <el-form-item label="封面（圖片大小要求 500*500，且圖片容量需小於 2MB）">
           <el-upload
@@ -654,9 +653,47 @@
 
 <script>
 import { ElMessage } from 'element-plus';
+import tinymce from 'tinymce/tinymce';
+// import 'tinymce/models/dom'; (TinyMCE 6)
+
+// 外觀
+import 'tinymce/skins/ui/oxide/skin.css';
+import 'tinymce/themes/silver';
+
+// Icon
+import 'tinymce/icons/default';
+
+// 用到的外掛
+import 'tinymce/plugins/table';
+import 'tinymce/plugins/quickbars';
+import 'tinymce/plugins/image';
+import 'tinymce/plugins/imagetools';
+
+// 語言包
+import 'tinymce-i18n/langs5/zh_TW';
+// import 'tinymce-i18n/langs/zh_Hans.js' (TinyMCE 6 的簡體中文)
+
+// TinyMCE-Vue
+import Editor from '@tinymce/tinymce-vue';
 
 export default {
   components: {
+    Editor,
+  },
+  props: {
+    value: {
+      type: String,
+      default: '',
+    },
+    plugins: {
+      type: [String, Array],
+      default: 'quickbars table image',
+    },
+    toolbar: {
+      type: [String, Array],
+      default:
+        ' bold italic underline strikethrough | fontsizeselect | forecolor backcolor | alignleft aligncenter alignright alignjustify|bullist numlist |outdent indent blockquote | undo redo | axupimgs | removeformat | table | image',
+    },
   },
   data() {
     const validatePass = (rule, value, callback) => {
@@ -714,6 +751,20 @@ export default {
       }
     };
     return {
+      init: {
+        language: 'zh_TW',
+        height: 500,
+        menubar: false,
+        content_css: false,
+        skin: false,
+        plugins: this.plugins,
+        toolbar: this.toolbar,
+        quickbars_insert_toolbar: false,
+        branding: false,
+        images_file_types: 'jpg,png',
+        file_picker_types: 'image',
+      },
+      editorValue: this.value,
       loginDialog: false,
       registerDialog: false,
       loginForm: {
@@ -834,14 +885,6 @@ export default {
           },
           {
             max: 90, message: '介紹最多 90 個字元', trigger: 'change',
-          },
-        ],
-        content: [
-          {
-            required: true, message: '請輸入內文', trigger: 'blur',
-          },
-          {
-            max: 65535, message: '內文最多 65535 個字元', trigger: 'change',
           },
         ],
         git_file_path: [
@@ -1184,10 +1227,11 @@ export default {
       }
       this.$refs[formName].validate((valid) => {
         if (valid) {
+          console.log(this.editorValue);
           const form = new FormData();
           form.append('title', this.editArticleForm.title);
           form.append('introduction', this.editArticleForm.introduction);
-          form.append('content', this.editArticleForm.content);
+          form.append('content', this.editorValue);
           form.append('cover', this.editArticleForm.cover);
           form.append('git_file_path', this.editArticleForm.git_file_path);
           const api = `${process.env.VUE_APP_API}article`;
@@ -1495,7 +1539,6 @@ export default {
         }
       });
     },
-    // 刪除文章，還沒搞定
     deleteArticle(articleId) {
       const api = `${process.env.VUE_APP_API}article/${articleId}`;
       this.$http.delete(
@@ -1547,6 +1590,17 @@ export default {
       this.user.avatar = `data:image/jpeg;base64,${this.$store.state.AVATAR}`;
       this.auth = this.$store.state.AUTH;
     }
+  },
+  mounted() {
+    tinymce.init({});
+  },
+  watch: {
+    value(newValue) {
+      this.editorValue = newValue;
+    },
+    editorValue(newValue) {
+      this.$emit('input', newValue);
+    },
   },
   computed: {
     checkId: {

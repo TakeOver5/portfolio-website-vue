@@ -44,4 +44,8 @@ body {
   text-align: center;
 }
 
+.tox-tinymce-aux {
+  z-index: 9999 !important;
+}
+
 </style>
