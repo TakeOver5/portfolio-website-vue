@@ -172,11 +172,19 @@
           <p>最後修改時間：{{cardDetaildData.lastModifiedDate}}</p>
         </div>
       </el-col>
-      <el-col>
+      <el-col v-if="user.memberId == cardDetaildData.memberId">
+        <el-popconfirm :title="`確定修改文章嗎？`"
+        @confirm="prepareArticle()"
+        width="175px">
+          <template #reference>
+            <el-button :disabled="checkAuth == 'ROLE_banner'"
+              type="primary">修改文章
+            </el-button>
+          </template>
+        </el-popconfirm>
         <el-popconfirm :title="`確定刪除文章嗎？`"
         @confirm="deleteArticle(cardDetaildData.articleId)"
-        width="175px"
-        v-if="user.memberId == cardDetaildData.memberId">
+        width="175px">
           <template #reference>
             <el-button
               type="danger">刪除文章
@@ -379,6 +387,69 @@
     </el-dialog>
   </div>
   <!-- 文章編輯頁面結束 -->
+  <!-- 文章修改頁面 -->
+  <div class="editArticle">
+    <el-dialog v-model="editArticleDialog" title="修改文章"
+    max-width="1000px" width="80%"
+    align-center
+    append-to-body
+    :before-close="editArticleDialogBeforeClose"
+    >
+      <VueLoading :active="isLoading">
+        <div class="loadingio-spinner-pulse-gb0ieg13ubs"><div class="ldio-dpfomw9oxxm">
+        <div></div><div></div><div></div>
+        </div></div>
+      </VueLoading>
+      <el-form
+        label-width="200px"
+        style="max-width: 100%"
+        label-position="top"
+        :model="editArticleForm"
+        ref="ruleEditArticleForm"
+        :rules="editArticleRules"
+        :append-to-body="false"
+      >
+        <el-form-item label="標題" prop="title" >
+          <el-input placeholder="請輸入專題標題" v-model="editArticleForm.title" />
+        </el-form-item>
+        <el-form-item label="介紹" prop="introduction" >
+          <el-input placeholder="請在 80 個字內簡短的介紹專題" v-model="editArticleForm.introduction" />
+        </el-form-item>
+        <el-form-item label="內文">
+          <div class="editor" style="width: 100%">
+            <editor v-model="editorValue" :init="init"></editor>
+          </div>
+        </el-form-item>
+        <el-form-item label="封面（圖片大小要求 500*500，且圖片容量需小於 2MB）">
+          <el-upload
+            class="avatar-uploader"
+            :show-file-list="false"
+            ref="upload"
+            :limit="1"
+            :on-remove="handleRemove"
+            :on-change="handleEditChange"
+            :before-upload="uploadPreview"
+            accept=".png, .jpg"
+            action=""
+          >
+            <img v-if="imageUrl" :src="imageUrl" class="avatar" alt="" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="GitHub 路徑" prop="git_file_path" >
+          <el-input placeholder="請輸入專題的 GitHub 路徑"
+          v-model="editArticleForm.git_file_path" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary"
+          @click="updateArticle('ruleEditArticleForm')">修改</el-button>
+          <el-button type="danger"
+          @click="deleteEditArticleForm">清除</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+  <!-- 文章修改頁面結束 -->
   <!-- 管理員頁面 -->
   <!-- 文章管理頁面 -->
   <el-dialog v-model="manageArticleDialog"
@@ -945,6 +1016,7 @@ export default {
       },
       auth: '',
       addArticleDialog: false,
+      editArticleDialog: false,
       memberTableData: [],
       articleTableData: [],
       param: {},
@@ -999,6 +1071,7 @@ export default {
       sendMailBtn: false,
       sendMailDialog: false,
       isLoading: false,
+      oldCoverPath: '',
     };
   },
   methods: {
@@ -1072,6 +1145,9 @@ export default {
           this.auth = '';
           localStorage.clear();
           sessionStorage.clear();
+          this.deleteEditArticleForm();
+          this.editorValue = '';
+          this.imageUrl = '';
           ElMessage({
             showClose: true,
             message: '登出成功',
@@ -1299,6 +1375,7 @@ export default {
     deleteEditArticleForm() {
       this.editArticleForm = {};
       this.imageUrl = '';
+      this.editorValue = '';
     },
     leaveMessage() {
       if (this.messageForm.message === '') {
@@ -1607,6 +1684,81 @@ export default {
           type: 'error',
         });
       });
+    },
+    prepareArticle() {
+      this.editArticleForm.title = this.cardDetaildData.title;
+      this.editArticleForm.introduction = this.cardDetaildData.introduction;
+      this.editorValue = this.cardDetaildData.content;
+      this.editArticleForm.git_file_path = this.cardDetaildData.gitFilePath;
+      this.imageUrl = this.cardDetaildData.coverPath;
+      this.oldCoverPath = this.cardDetaildData.coverPath;
+      this.editArticleDialog = true;
+      this.cardDetaildialog = false;
+    },
+    // 更新文章
+    updateArticle(formName) {
+      if (!this.imageUrl) {
+        ElMessage.error('還沒上傳封面圖片');
+        return;
+      }
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          console.log(this.editorValue);
+          const form = new FormData();
+          form.append('title', this.editArticleForm.title);
+          form.append('introduction', this.editArticleForm.introduction);
+          form.append('content', this.editorValue);
+          form.append('oldCover', this.oldCoverPath);
+          if (this.oldCoverPath !== this.editArticleForm.cover) {
+            form.append('newCover', this.editArticleForm.cover);
+          }
+          form.append('git_file_path', this.editArticleForm.git_file_path);
+          console.log(this.editArticleForm);
+          const api = `${process.env.VUE_APP_API}article/edit/${this.cardDetaildData.articleId}`;
+          console.log(api);
+          this.isLoading = true;
+          this.$http.post(api, form, {
+            headers: {
+              'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>',
+              authorization: sessionStorage.getItem('TOKEN'),
+            },
+          }).then((res) => {
+            console.log(res);
+            if (res.data.code === 200) {
+              ElMessage({
+                showClose: true,
+                message: '修改成功',
+                type: 'success',
+              });
+              this.deleteEditArticleForm();
+              this.editorValue = '';
+              this.editArticleDialog = false;
+              this.handleCurrentChange(1);
+            } else {
+              ElMessage({
+                showClose: true,
+                message: res.data.message,
+                type: 'error',
+              });
+            }
+            this.isLoading = false;
+          }).catch(() => {
+            ElMessage({
+              showClose: true,
+              message: '登入過期，請重新登入',
+              type: 'error',
+            });
+            this.isLoading = false;
+          });
+        }
+        return false;
+      });
+    },
+    editArticleDialogBeforeClose(done) {
+      this.deleteEditArticleForm();
+      this.editorValue = '';
+      this.imageUrl = '';
+      done();
     },
   },
   created() {
