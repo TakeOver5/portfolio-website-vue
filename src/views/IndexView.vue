@@ -78,7 +78,11 @@
           <!-- 分頁結束 -->
           <el-row class="footer">
             <div class="copyright">
-              <p>版權宣告</p>
+              <p>資料庫資料源於此處：
+                <a href="https://cspace.cit.stu.edu.tw/Project/all/1/107" target="_blank">
+                  https://cspace.cit.stu.edu.tw/Project/all/1/107
+                </a>
+              </p>
             </div>
           </el-row>
         </div>
@@ -155,6 +159,11 @@
   <!-- 卡片明細對話框 -->
   <el-dialog v-model="cardDetaildialog"
   width="80%" max-height="80%">
+    <VueLoading :active="isLoading">
+      <div class="loadingio-spinner-pulse-gb0ieg13ubs"><div class="ldio-dpfomw9oxxm">
+      <div></div><div></div><div></div>
+      </div></div>
+    </VueLoading>
     <el-row :gutter="8">
       <el-col>
         <h1>{{cardDetaildData.title}}</h1>
@@ -177,7 +186,7 @@
         @confirm="prepareArticle()"
         width="175px">
           <template #reference>
-            <el-button :disabled="checkAuth == 'ROLE_banner'"
+            <el-button :disabled="checkAuth === 'ROLE_banner'"
               type="primary">修改文章
             </el-button>
           </template>
@@ -854,6 +863,7 @@ export default {
         images_file_types: 'jpg,png',
         file_picker_types: 'image',
         object_resizing: true,
+        content_style: 'img{width: 30%}',
       },
       editorValue: this.value,
       loginDialog: false,
@@ -1654,6 +1664,7 @@ export default {
     },
     deleteArticle(articleId) {
       const api = `${process.env.VUE_APP_API}article/${articleId}`;
+      this.isLoading = true;
       this.$http.delete(
         api,
         {
@@ -1677,12 +1688,14 @@ export default {
             type: 'error',
           });
         }
+        this.isLoading = false;
       }).catch((err) => {
         ElMessage({
           showClose: true,
           message: err,
           type: 'error',
         });
+        this.isLoading = false;
       });
     },
     prepareArticle() {
