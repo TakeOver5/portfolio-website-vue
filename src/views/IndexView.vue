@@ -324,6 +324,11 @@
     align-center
     append-to-body
     >
+      <VueLoading :active="isLoading">
+        <div class="loadingio-spinner-pulse-gb0ieg13ubs"><div class="ldio-dpfomw9oxxm">
+        <div></div><div></div><div></div>
+        </div></div>
+      </VueLoading>
       <el-form
         label-width="200px"
         style="max-width: 100%"
@@ -639,6 +644,11 @@
   align-center
   :top="0"
   width="440px" title="找回密碼">
+    <VueLoading :active="isLoading">
+      <div class="loadingio-spinner-pulse-gb0ieg13ubs"><div class="ldio-dpfomw9oxxm">
+      <div></div><div></div><div></div>
+      </div></div>
+    </VueLoading>
     <div class="personDataPage">
         <el-form
         label-position="top"
@@ -773,7 +783,6 @@ export default {
         images_file_types: 'jpg,png',
         file_picker_types: 'image',
         object_resizing: true,
-        content_style: 'img{width: 50%}',
       },
       editorValue: this.value,
       loginDialog: false,
@@ -989,6 +998,7 @@ export default {
       personManageArticleNum: 0,
       sendMailBtn: false,
       sendMailDialog: false,
+      isLoading: false,
     };
   },
   methods: {
@@ -1248,6 +1258,7 @@ export default {
           form.append('cover', this.editArticleForm.cover);
           form.append('git_file_path', this.editArticleForm.git_file_path);
           const api = `${process.env.VUE_APP_API}article`;
+          this.isLoading = true;
           this.$http.post(api, form, {
             headers: {
               'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>',
@@ -1272,12 +1283,14 @@ export default {
                 type: 'error',
               });
             }
+            this.isLoading = false;
           }).catch(() => {
             ElMessage({
               showClose: true,
               message: '登入過期，請重新登入',
               type: 'error',
             });
+            this.isLoading = false;
           });
         }
         return false;
@@ -1526,6 +1539,7 @@ export default {
         if (valid) {
           this.sendMailBtn = true;
           const api = `${process.env.VUE_APP_API}forgotpw`;
+          this.isLoading = true;
           this.$http.post(
             api,
             { ...this.forgetPwForm },
@@ -1547,6 +1561,7 @@ export default {
             this.sendMailBtn = false;
             this.sendMailDialog = false;
             this.forgetPwForm.email = '';
+            this.isLoading = false;
           }).catch((err) => {
             ElMessage({
               showClose: true,
@@ -1555,6 +1570,7 @@ export default {
             });
             this.forgetPwForm.email = '';
             this.sendMailBtn = false;
+            this.isLoading = false;
           });
         }
       });
@@ -1928,6 +1944,66 @@ export default {
 .el-carousel__item {
   background-color:transparent;
 }
+
+// loading style
+
+@keyframes ldio-dpfomw9oxxm-1 {
+  0% { top: 36px; height: 128px }
+  50% { top: 60px; height: 80px }
+  100% { top: 60px; height: 80px }
+}
+
+@keyframes ldio-dpfomw9oxxm-2 {
+  0% { top: 41.99999999999999px; height: 116.00000000000001px }
+  50% { top: 60px; height: 80px }
+  100% { top: 60px; height: 80px }
+}
+
+@keyframes ldio-dpfomw9oxxm-3 {
+  0% { top: 48px; height: 104px }
+  50% { top: 60px; height: 80px }
+  100% { top: 60px; height: 80px }
+}
+
+.ldio-dpfomw9oxxm div { position: absolute; width: 30px }.ldio-dpfomw9oxxm div:nth-child(1) {
+  left: 35px;
+  background: #ffb6bb;
+  animation: ldio-dpfomw9oxxm-1 1s cubic-bezier(0,0.5,0.5,1) infinite;
+  animation-delay: -0.2s
+}
+
+.ldio-dpfomw9oxxm div:nth-child(2) {
+  left: 85px;
+  background: #ffe691;
+  animation: ldio-dpfomw9oxxm-2 1s cubic-bezier(0,0.5,0.5,1) infinite;
+  animation-delay: -0.1s
+}
+
+.ldio-dpfomw9oxxm div:nth-child(3) {
+  left: 135px;
+  background: #95d5ee;
+  animation: ldio-dpfomw9oxxm-3 1s cubic-bezier(0,0.5,0.5,1) infinite;
+  animation-delay: undefineds
+}
+
+.loadingio-spinner-pulse-gb0ieg13ubs {
+  width: 200px;
+  height: 200px;
+  display: inline-block;
+  overflow: hidden;
+  background: none;
+}
+
+.ldio-dpfomw9oxxm {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform: translateZ(0) scale(1);
+  backface-visibility: hidden;
+  transform-origin: 0 0; /* see note above */
+}
+
+.ldio-dpfomw9oxxm div { box-sizing: content-box; }
 
 @media (max-width: 575.99px) {  }
 
