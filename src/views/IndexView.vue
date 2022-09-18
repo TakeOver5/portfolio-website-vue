@@ -194,7 +194,7 @@
       </el-col>
       <el-col>
         <h2>專題內文</h2>
-        <div v-html="cardDetaildData.content"></div>
+        <div v-html="cardDetaildData.content" class="myContent"></div>
       </el-col>
       <el-col>
         <div class="header-avatar" style="margin-top:16px;">
@@ -464,7 +464,7 @@
           <el-avatar v-else>user</el-avatar>
         </template>
       </el-table-column>
-      <el-table-column prop="name" label="作者" width="180" align="center">
+      <el-table-column prop="name" label="作者" width="200" align="center">
         <template #default="scope">
           <div style="display: flex; align-items: center">
             <el-icon><UserFilled /></el-icon>
@@ -773,6 +773,7 @@ export default {
         images_file_types: 'jpg,png',
         file_picker_types: 'image',
         object_resizing: true,
+        content_style: 'img{width: 50%}',
       },
       editorValue: this.value,
       loginDialog: false,

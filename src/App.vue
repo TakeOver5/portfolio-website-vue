@@ -22,6 +22,12 @@ body {
   text-align: center;
   color: #2c3e50;
   overflow-x:hidden;
+  .myContent {
+    img {
+      max-width: 100% !important;
+      height: auto !important;
+    }
+  }
 }
 
 .avatar-uploader .el-upload {
